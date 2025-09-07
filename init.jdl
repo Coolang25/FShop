@@ -1,0 +1,191 @@
+application {
+  config {
+    baseName FShop
+    applicationType monolith
+    packageName com.quattrinh.shop
+    authenticationType jwt
+    prodDatabaseType postgresql
+    devDatabaseType postgresql
+    buildTool maven
+    serviceDiscoveryType no
+    clientFramework react
+    enableHibernateCache true
+    languages [en, vi]
+    nativeLanguage en
+  }
+  entities *
+}
+
+// ===================== Enums =====================
+enum OrderStatus { PENDING, PAID, SHIPPED, COMPLETED, CANCELED }
+enum PaymentStatus { PENDING, SUCCESS, FAILED }
+enum PaymentMethod { COD, CREDIT_CARD, PAYPAL, VNPAY, MOMO }
+
+// ===================== Entities =====================
+
+// Phân cấp thể loại (Women/Men/... -> Jeans/Jacket/...)
+entity Category {
+  name String required maxlength(255)
+}
+
+// Sản phẩm (thông tin chung, giá tham chiếu optional)
+entity Product {
+  name String required maxlength(255),
+  description TextBlob,
+  basePrice BigDecimal,
+  imageUrl String
+}
+
+entity ProductImage {
+  url String required,
+  isMain Boolean
+}
+
+// Liên kết N-N Product <-> Category (JHipster tự tạo bảng nối)
+relationship ManyToMany {
+  Product{categories(name)} to Category{products}
+}
+
+relationship ManyToOne {
+  ProductImage{product(name)} to Product
+}
+
+// Thuộc tính (Size, Color, ...)
+entity ProductAttribute {
+  name String required maxlength(100)
+}
+
+// Giá trị thuộc tính (S, M, L / Red, Black, ...)
+entity ProductAttributeValue {
+  value String required maxlength(100)
+}
+relationship ManyToOne {
+  ProductAttributeValue{attribute(name)} to ProductAttribute
+}
+
+// Biến thể sản phẩm (SKU) – giá & tồn kho nằm ở đây
+entity ProductVariant {
+  sku String required unique maxlength(100),
+  price BigDecimal required,
+  stock Integer required min(0)
+}
+relationship ManyToOne {
+  ProductVariant{product(name)} to Product
+}
+
+// Gán các giá trị thuộc tính cho từng variant (join-entity)
+entity VariantAttributeValue {
+  // tạo id riêng vì JDL không hỗ trợ PK tổng hợp
+}
+relationship ManyToOne {
+  VariantAttributeValue{variant(sku)} to ProductVariant,
+  VariantAttributeValue{attributeValue(value)} to ProductAttributeValue
+}
+
+entity ProductReview {
+  rating Integer required min(1) max(5),  // điểm đánh giá 1–5
+  comment TextBlob,                       // nội dung nhận xét
+  createdAt Instant,
+  updatedAt Instant
+}
+relationship ManyToOne {
+  ProductReview{product(name)} to Product,
+  ProductReview{user(login)} to User with builtInEntity
+}
+
+// Giỏ hàng – 1-1 theo User (User là entity built-in của JHipster)
+entity Cart {
+  createdAt Instant,
+  updatedAt Instant
+}
+relationship OneToOne {
+  Cart{user(login)} to User with builtInEntity
+}
+
+// Mục trong giỏ
+entity CartItem {
+  quantity Integer required min(1),
+  price BigDecimal required // snapshot giá lúc thêm giỏ
+}
+relationship ManyToOne {
+  CartItem{cart} to Cart,
+  CartItem{variant(sku)} to ProductVariant
+}
+
+// Đơn hàng
+entity ShopOrder {
+  status OrderStatus required,
+  total BigDecimal required,
+  shippingAddress String required maxlength(1000),
+  createdAt Instant,
+  updatedAt Instant
+}
+relationship ManyToOne {
+  ShopOrder{user(login)} to User with builtInEntity
+}
+
+// Dòng hàng trong đơn
+entity OrderItem {
+  quantity Integer required min(1),
+  price BigDecimal required // snapshot giá lúc đặt
+}
+relationship ManyToOne {
+  OrderItem{order} to ShopOrder,
+  OrderItem{variant(sku)} to ProductVariant
+}
+
+// Thanh toán – 1 đơn có 1 giao dịch (1–1)
+entity Payment {
+  method PaymentMethod required,
+  status PaymentStatus required,
+  amount BigDecimal required,
+  transactionId String,
+  createdAt Instant
+}
+relationship OneToOne {
+  Payment{order} to ShopOrder
+}
+
+// Log hội thoại chatbot (Vertex AI)
+entity ChatbotLog {
+  question TextBlob required,
+  answer TextBlob,
+  createdAt Instant
+}
+relationship ManyToOne {
+  ChatbotLog{user(login)} to User with builtInEntity
+}
+
+// ===================== Options & Config =====================
+
+// Pagination để list mượt hơn
+paginate Category with pagination
+paginate Product with pagination
+paginate ProductAttribute with pagination
+paginate ProductAttributeValue with pagination
+paginate ProductVariant with pagination
+paginate VariantAttributeValue with pagination
+paginate CartItem with pagination
+paginate ShopOrder with pagination
+paginate OrderItem with pagination
+paginate Payment with pagination
+paginate ChatbotLog with pagination
+paginate ProductImage with pagination
+paginate ProductReview with pagination
+
+// Service layer để tách business logic
+service * with serviceClass
+
+// DTO MapStruct (tuỳ, bạn có thể bỏ nếu muốn thao tác entity trực tiếp)
+dto * with mapstruct
+
+// Enable filtering (Spring Data JPA Specifications)
+filter *
+
+// Angular/React frontend sẽ nhận các enum & quan hệ đúng chuẩn từ backend
+
+// ===================== Hints ràng buộc DB (thêm hậu sinh nếu cần) =====================
+// - UNIQUE (product_id, category_id) do ManyToMany JHipster tự đảm bảo.
+// - UNIQUE (variant_id, attribute_value_id) cho VariantAttributeValue: thêm constraint trong changelog tùy chỉnh.
+// - UNIQUE cart.user_id để đảm bảo 1 user có 1 cart (JHipster OneToOne đã đặt unique).
+// - UNIQUE payment.order_id để đảm bảo 1–1 giữa Payment và ShopOrder.

@@ -1,0 +1,12 @@
+{
+  "fShopApp": {
+    "OrderStatus": {
+      "null": "",
+      "PENDING": "PENDING",
+      "PAID": "PAID",
+      "SHIPPED": "SHIPPED",
+      "COMPLETED": "COMPLETED",
+      "CANCELED": "CANCELED"
+    }
+  }
+}

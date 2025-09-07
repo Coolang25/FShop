@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+    <!--
+        Added the constraints for entity VariantAttributeValue.
+    -->
+    <changeSet id="20250907024803-2" author="jhipster">
+
+        <addForeignKeyConstraint baseColumnNames="variant_id"
+                                 baseTableName="variant_attribute_value"
+                                 constraintName="fk_variant_attribute_value__variant_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="product_variant"
+                                 />
+
+        <addForeignKeyConstraint baseColumnNames="attribute_value_id"
+                                 baseTableName="variant_attribute_value"
+                                 constraintName="fk_variant_attribute_value__attribute_value_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="product_attribute_value"
+                                 />
+    </changeSet>
+</databaseChangeLog>

@@ -1,0 +1,25 @@
+{
+  "fShopApp": {
+    "variantAttributeValue": {
+      "home": {
+        "title": "Variant Attribute Values",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Thêm mới một Variant Attribute Value",
+        "createOrEditLabel": "Thêm mới hoặc cập nhật Variant Attribute Value",
+        "notFound": "No Variant Attribute Values found"
+      },
+      "created": "Một Variant Attribute Value mới được tạo với định danh {{ param }}",
+      "updated": "Một Variant Attribute Value cập nhật với định danh {{ param }}",
+      "deleted": "Một Variant Attribute Value đã xóa với định danh {{ param }}",
+      "delete": {
+        "question": "Bạn có chắc là muốn xóa Variant Attribute Value {{ id }}?"
+      },
+      "detail": {
+        "title": "Variant Attribute Value"
+      },
+      "id": "ID",
+      "variant": "Variant",
+      "attributeValue": "Attribute Value"
+    }
+  }
+}

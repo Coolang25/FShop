@@ -1,0 +1,30 @@
+{
+  "fShopApp": {
+    "shopOrder": {
+      "home": {
+        "title": "Shop Orders",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Shop Order",
+        "createOrEditLabel": "Create or edit a Shop Order",
+        "notFound": "No Shop Orders found"
+      },
+      "created": "A new Shop Order is created with identifier {{ param }}",
+      "updated": "A Shop Order is updated with identifier {{ param }}",
+      "deleted": "A Shop Order is deleted with identifier {{ param }}",
+      "delete": {
+        "question": "Are you sure you want to delete Shop Order {{ id }}?"
+      },
+      "detail": {
+        "title": "Shop Order"
+      },
+      "id": "ID",
+      "status": "Status",
+      "total": "Total",
+      "shippingAddress": "Shipping Address",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "user": "User",
+      "payment": "Payment"
+    }
+  }
+}

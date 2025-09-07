@@ -1,0 +1,29 @@
+{
+  "fShopApp": {
+    "productReview": {
+      "home": {
+        "title": "Product Reviews",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Thêm mới một Product Review",
+        "createOrEditLabel": "Thêm mới hoặc cập nhật Product Review",
+        "notFound": "No Product Reviews found"
+      },
+      "created": "Một Product Review mới được tạo với định danh {{ param }}",
+      "updated": "Một Product Review cập nhật với định danh {{ param }}",
+      "deleted": "Một Product Review đã xóa với định danh {{ param }}",
+      "delete": {
+        "question": "Bạn có chắc là muốn xóa Product Review {{ id }}?"
+      },
+      "detail": {
+        "title": "Product Review"
+      },
+      "id": "ID",
+      "rating": "Rating",
+      "comment": "Comment",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "product": "Product",
+      "user": "User"
+    }
+  }
+}

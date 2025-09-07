@@ -1,0 +1,12 @@
+{
+  "fShopApp": {
+    "PaymentMethod": {
+      "null": "",
+      "COD": "COD",
+      "CREDIT_CARD": "CREDIT_CARD",
+      "PAYPAL": "PAYPAL",
+      "VNPAY": "VNPAY",
+      "MOMO": "MOMO"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "generator-jhipster": {
+    "applicationType": "monolith",
+    "authenticationType": "jwt",
+    "baseName": "FShop",
+    "buildTool": "maven",
+    "clientFramework": "react",
+    "devDatabaseType": "postgresql",
+    "devServerPort": 9060,
+    "enableHibernateCache": true,
+    "entities": [
+      "Category",
+      "Product",
+      "ProductImage",
+      "ProductAttribute",
+      "ProductAttributeValue",
+      "ProductVariant",
+      "VariantAttributeValue",
+      "ProductReview",
+      "Cart",
+      "CartItem",
+      "ShopOrder",
+      "OrderItem",
+      "Payment",
+      "ChatbotLog"
+    ],
+    "jhipsterVersion": "8.7.1",
+    "jwtSecretKey": "MTQxMDdiOTZhZGEzNWU3ZjQyYTg5Njg3NjVhMDJhNjFiMTIxZDgxOThjMzE5NzE4ZDRmNmNhYjkzNjc4ZDViMTEzZjE2NGIwYTVkMTNkYjIxMjZhNDQ3NzZiNTc5YzE1ZjhiZjJhNzg2ZTI2YWU3MjEwYTViYTliMzg2ZDc2NGM=",
+    "languages": ["en", "vi"],
+    "lastLiquibaseTimestamp": 1757213703000,
+    "nativeLanguage": "en",
+    "packageName": "com.quattrinh.shop",
+    "prodDatabaseType": "postgresql",
+    "serviceDiscoveryType": "no"
+  }
+}

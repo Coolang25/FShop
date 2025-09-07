@@ -1,0 +1,29 @@
+{
+  "annotations": {
+    "changelogDate": "20250907024803"
+  },
+  "applications": ["FShop"],
+  "dto": "mapstruct",
+  "fields": [],
+  "jpaMetamodelFiltering": true,
+  "name": "VariantAttributeValue",
+  "pagination": "pagination",
+  "relationships": [
+    {
+      "otherEntityField": "sku",
+      "otherEntityName": "productVariant",
+      "relationshipName": "variant",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one"
+    },
+    {
+      "otherEntityField": "value",
+      "otherEntityName": "productAttributeValue",
+      "relationshipName": "attributeValue",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

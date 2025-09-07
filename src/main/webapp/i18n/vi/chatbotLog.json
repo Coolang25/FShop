@@ -1,0 +1,27 @@
+{
+  "fShopApp": {
+    "chatbotLog": {
+      "home": {
+        "title": "Chatbot Logs",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Thêm mới một Chatbot Log",
+        "createOrEditLabel": "Thêm mới hoặc cập nhật Chatbot Log",
+        "notFound": "No Chatbot Logs found"
+      },
+      "created": "Một Chatbot Log mới được tạo với định danh {{ param }}",
+      "updated": "Một Chatbot Log cập nhật với định danh {{ param }}",
+      "deleted": "Một Chatbot Log đã xóa với định danh {{ param }}",
+      "delete": {
+        "question": "Bạn có chắc là muốn xóa Chatbot Log {{ id }}?"
+      },
+      "detail": {
+        "title": "Chatbot Log"
+      },
+      "id": "ID",
+      "question": "Question",
+      "answer": "Answer",
+      "createdAt": "Created At",
+      "user": "User"
+    }
+  }
+}

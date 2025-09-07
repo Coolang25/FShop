@@ -1,0 +1,25 @@
+{
+  "fShopApp": {
+    "productAttributeValue": {
+      "home": {
+        "title": "Product Attribute Values",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Product Attribute Value",
+        "createOrEditLabel": "Create or edit a Product Attribute Value",
+        "notFound": "No Product Attribute Values found"
+      },
+      "created": "A new Product Attribute Value is created with identifier {{ param }}",
+      "updated": "A Product Attribute Value is updated with identifier {{ param }}",
+      "deleted": "A Product Attribute Value is deleted with identifier {{ param }}",
+      "delete": {
+        "question": "Are you sure you want to delete Product Attribute Value {{ id }}?"
+      },
+      "detail": {
+        "title": "Product Attribute Value"
+      },
+      "id": "ID",
+      "value": "Value",
+      "attribute": "Attribute"
+    }
+  }
+}

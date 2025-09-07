@@ -1,0 +1,25 @@
+{
+  "fShopApp": {
+    "productAttributeValue": {
+      "home": {
+        "title": "Product Attribute Values",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Thêm mới một Product Attribute Value",
+        "createOrEditLabel": "Thêm mới hoặc cập nhật Product Attribute Value",
+        "notFound": "No Product Attribute Values found"
+      },
+      "created": "Một Product Attribute Value mới được tạo với định danh {{ param }}",
+      "updated": "Một Product Attribute Value cập nhật với định danh {{ param }}",
+      "deleted": "Một Product Attribute Value đã xóa với định danh {{ param }}",
+      "delete": {
+        "question": "Bạn có chắc là muốn xóa Product Attribute Value {{ id }}?"
+      },
+      "detail": {
+        "title": "Product Attribute Value"
+      },
+      "id": "ID",
+      "value": "Value",
+      "attribute": "Attribute"
+    }
+  }
+}

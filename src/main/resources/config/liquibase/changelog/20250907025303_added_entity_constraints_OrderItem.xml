@@ -8,20 +8,20 @@
     <!--
         Added the constraints for entity OrderItem.
     -->
-    <changeSet id="20250907025303-2" author="jhipster">
+    <changeSet id="20250907025303-2" author="quattt">
 
         <addForeignKeyConstraint baseColumnNames="order_id"
-                                 baseTableName="order_item"
-                                 constraintName="fk_order_item__order_id"
+                                 baseTableName="order_items"
+                                 constraintName="fk_order_items__order_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="shop_order"
+                                 referencedTableName="shop_orders"
                                  />
 
         <addForeignKeyConstraint baseColumnNames="variant_id"
-                                 baseTableName="order_item"
-                                 constraintName="fk_order_item__variant_id"
+                                 baseTableName="order_items"
+                                 constraintName="fk_order_items__variant_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="product_variant"
+                                 referencedTableName="product_variants"
                                  />
     </changeSet>
 </databaseChangeLog>

@@ -8,20 +8,20 @@
     <!--
         Added the constraints for entity ProductReview.
     -->
-    <changeSet id="20250907024903-2" author="jhipster">
+    <changeSet id="20250907024903-2" author="quattt">
 
         <addForeignKeyConstraint baseColumnNames="product_id"
-                                 baseTableName="product_review"
-                                 constraintName="fk_product_review__product_id"
+                                 baseTableName="product_reviews"
+                                 constraintName="fk_product_reviews__product_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="product"
+                                 referencedTableName="products"
                                  />
 
         <addForeignKeyConstraint baseColumnNames="user_id"
-                                 baseTableName="product_review"
-                                 constraintName="fk_product_review__user_id"
+                                 baseTableName="product_reviews"
+                                 constraintName="fk_product_reviews__user_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="jhi_user"
+                                 referencedTableName="users"
                                  />
     </changeSet>
 </databaseChangeLog>

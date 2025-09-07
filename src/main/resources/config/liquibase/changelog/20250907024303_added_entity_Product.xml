@@ -9,9 +9,9 @@
     <!--
         Added the entity Product.
     -->
-    <changeSet id="20250907024303-1" author="jhipster">
-        <createTable tableName="product">
-            <column name="id" type="bigint">
+    <changeSet id="20250907024303-1" author="quattt">
+        <createTable tableName="products">
+            <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="name" type="varchar(255)">
@@ -30,10 +30,10 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="20250907024303-1-relations" author="jhipster">
+    <changeSet id="20250907024303-1-relations" author="quattt">
 
-        <createTable tableName="rel_product__categories">
-            <column name="categories_id" type="bigint">
+        <createTable tableName="rel_products__categories">
+            <column name="category_id" type="bigint">
                 <constraints nullable="false"/>
             </column>
             <column name="product_id" type="bigint">
@@ -41,7 +41,7 @@
             </column>
         </createTable>
 
-        <addPrimaryKey columnNames="product_id, categories_id" tableName="rel_product__categories"/>
+        <addPrimaryKey columnNames="product_id, category_id" tableName="rel_products__categories"/>
     </changeSet>
 
     <!-- jhipster-needle-liquibase-add-changeset - JHipster will add changesets here -->
@@ -54,11 +54,11 @@
           This can be customized by adding or removing 'faker' in the 'spring.liquibase.contexts'
           Spring Boot configuration key.
     -->
-    <changeSet id="20250907024303-1-data" author="jhipster" context="faker">
+    <changeSet id="20250907024303-1-data" author="quattt" context="faker">
         <loadData
                   file="config/liquibase/fake-data/product.csv"
                   separator=";"
-                  tableName="product"
+                  tableName="products"
                   usePreparedStatements="true">
             <column name="id" type="numeric"/>
             <column name="name" type="string"/>

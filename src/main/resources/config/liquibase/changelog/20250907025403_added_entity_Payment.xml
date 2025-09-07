@@ -9,9 +9,9 @@
     <!--
         Added the entity Payment.
     -->
-    <changeSet id="20250907025403-1" author="jhipster">
-        <createTable tableName="payment">
-            <column name="id" type="bigint">
+    <changeSet id="20250907025403-1" author="quattt">
+        <createTable tableName="payments">
+            <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="method" type="varchar(255)">
@@ -34,7 +34,7 @@
             </column>
             <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here -->
         </createTable>
-        <dropDefaultValue tableName="payment" columnName="created_at" columnDataType="${datetimeType}"/>
+        <dropDefaultValue tableName="payments" columnName="created_at" columnDataType="${datetimeType}"/>
     </changeSet>
 
     <!-- jhipster-needle-liquibase-add-changeset - JHipster will add changesets here -->
@@ -47,11 +47,11 @@
           This can be customized by adding or removing 'faker' in the 'spring.liquibase.contexts'
           Spring Boot configuration key.
     -->
-    <changeSet id="20250907025403-1-data" author="jhipster" context="faker">
+    <changeSet id="20250907025403-1-data" author="quattt" context="faker">
         <loadData
                   file="config/liquibase/fake-data/payment.csv"
                   separator=";"
-                  tableName="payment"
+                  tableName="payments"
                   usePreparedStatements="true">
             <column name="id" type="numeric"/>
             <column name="method" type="string"/>

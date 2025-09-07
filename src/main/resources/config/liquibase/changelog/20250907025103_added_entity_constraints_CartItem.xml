@@ -8,20 +8,20 @@
     <!--
         Added the constraints for entity CartItem.
     -->
-    <changeSet id="20250907025103-2" author="jhipster">
+    <changeSet id="20250907025103-2" author="quattt">
 
         <addForeignKeyConstraint baseColumnNames="cart_id"
-                                 baseTableName="cart_item"
-                                 constraintName="fk_cart_item__cart_id"
+                                 baseTableName="cart_items"
+                                 constraintName="fk_cart_items__cart_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="cart"
+                                 referencedTableName="carts"
                                  />
 
         <addForeignKeyConstraint baseColumnNames="variant_id"
-                                 baseTableName="cart_item"
-                                 constraintName="fk_cart_item__variant_id"
+                                 baseTableName="cart_items"
+                                 constraintName="fk_cart_items__variant_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="product_variant"
+                                 referencedTableName="product_variants"
                                  />
     </changeSet>
 </databaseChangeLog>

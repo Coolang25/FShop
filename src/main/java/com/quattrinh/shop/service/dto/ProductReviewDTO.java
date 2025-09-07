@@ -19,7 +19,6 @@ public class ProductReviewDTO implements Serializable {
     @Max(value = 5)
     private Integer rating;
 
-    @Lob
     private String comment;
 
     private Instant createdAt;

@@ -8,20 +8,20 @@
     <!--
         Added the constraints for entity VariantAttributeValue.
     -->
-    <changeSet id="20250907024803-2" author="jhipster">
+    <changeSet id="20250907024803-2" author="quattt">
 
         <addForeignKeyConstraint baseColumnNames="variant_id"
-                                 baseTableName="variant_attribute_value"
-                                 constraintName="fk_variant_attribute_value__variant_id"
+                                 baseTableName="variant_attribute_values"
+                                 constraintName="fk_variant_attribute_values__variant_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="product_variant"
+                                 referencedTableName="product_variants"
                                  />
 
         <addForeignKeyConstraint baseColumnNames="attribute_value_id"
-                                 baseTableName="variant_attribute_value"
-                                 constraintName="fk_variant_attribute_value__attribute_value_id"
+                                 baseTableName="variant_attribute_values"
+                                 constraintName="fk_variant_attribute_values__attribute_value_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="product_attribute_value"
+                                 referencedTableName="product_attribute_values"
                                  />
     </changeSet>
 </databaseChangeLog>

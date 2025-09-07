@@ -3,11 +3,11 @@ name: fshop
 services:
   postgresql:
     image: postgres:16.4
-    # volumes:
-    #   - ~/volumes/jhipster/FShop/postgresql/:/var/lib/postgresql/data/
+    volumes:
+      - D:/Workspaces/DockerVolume/FShop/postgresql/:/var/lib/postgresql/data/
     environment:
       - POSTGRES_USER=FShop
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_PASSWORD=fshop
       - POSTGRES_HOST_AUTH_METHOD=trust
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER}']
@@ -17,4 +17,4 @@ services:
     # If you want to expose these ports outside your dev PC,
     # remove the "127.0.0.1:" prefix
     ports:
-      - 127.0.0.1:5432:5432
+      - 127.0.0.1:5532:5432

@@ -14,10 +14,8 @@ public class ChatbotLogDTO implements Serializable {
 
     private Long id;
 
-    @Lob
     private String question;
 
-    @Lob
     private String answer;
 
     private Instant createdAt;

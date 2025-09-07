@@ -9,9 +9,9 @@
     <!--
         Added the entity Cart.
     -->
-    <changeSet id="20250907025003-1" author="jhipster">
-        <createTable tableName="cart">
-            <column name="id" type="bigint">
+    <changeSet id="20250907025003-1" author="quattt">
+        <createTable tableName="carts">
+            <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="created_at" type="${datetimeType}">
@@ -25,8 +25,8 @@
             </column>
             <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here -->
         </createTable>
-        <dropDefaultValue tableName="cart" columnName="created_at" columnDataType="${datetimeType}"/>
-        <dropDefaultValue tableName="cart" columnName="updated_at" columnDataType="${datetimeType}"/>
+        <dropDefaultValue tableName="carts" columnName="created_at" columnDataType="${datetimeType}"/>
+        <dropDefaultValue tableName="carts" columnName="updated_at" columnDataType="${datetimeType}"/>
     </changeSet>
 
     <!-- jhipster-needle-liquibase-add-changeset - JHipster will add changesets here -->
@@ -39,11 +39,11 @@
           This can be customized by adding or removing 'faker' in the 'spring.liquibase.contexts'
           Spring Boot configuration key.
     -->
-    <changeSet id="20250907025003-1-data" author="jhipster" context="faker">
+    <changeSet id="20250907025003-1-data" author="quattt" context="faker">
         <loadData
                   file="config/liquibase/fake-data/cart.csv"
                   separator=";"
-                  tableName="cart"
+                  tableName="carts"
                   usePreparedStatements="true">
             <column name="id" type="numeric"/>
             <column name="created_at" type="date"/>

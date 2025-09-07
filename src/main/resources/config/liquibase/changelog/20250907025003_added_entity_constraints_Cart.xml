@@ -8,13 +8,13 @@
     <!--
         Added the constraints for entity Cart.
     -->
-    <changeSet id="20250907025003-2" author="jhipster">
+    <changeSet id="20250907025003-2" author="quattt">
 
         <addForeignKeyConstraint baseColumnNames="user_id"
-                                 baseTableName="cart"
-                                 constraintName="fk_cart__user_id"
+                                 baseTableName="carts"
+                                 constraintName="fk_carts__user_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="jhi_user"
+                                 referencedTableName="users"
                                  />
     </changeSet>
 </databaseChangeLog>

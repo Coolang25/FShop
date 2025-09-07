@@ -16,7 +16,8 @@
     "checkJs": false,
     "baseUrl": "./",
     "paths": {
-      "app/*": ["src/main/webapp/app/*"]
+      "app/*": ["src/main/webapp/app/*"],
+      "content/*": ["src/main/webapp/app/content/*"]
     },
     "importHelpers": true,
     "esModuleInterop": true,

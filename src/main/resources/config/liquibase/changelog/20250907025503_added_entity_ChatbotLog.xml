@@ -9,9 +9,9 @@
     <!--
         Added the entity ChatbotLog.
     -->
-    <changeSet id="20250907025503-1" author="jhipster">
-        <createTable tableName="chatbot_log">
-            <column name="id" type="bigint">
+    <changeSet id="20250907025503-1" author="quattt">
+        <createTable tableName="chatbot_logs">
+            <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="question" type="${clobType}">
@@ -28,7 +28,7 @@
             </column>
             <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here -->
         </createTable>
-        <dropDefaultValue tableName="chatbot_log" columnName="created_at" columnDataType="${datetimeType}"/>
+        <dropDefaultValue tableName="chatbot_logs" columnName="created_at" columnDataType="${datetimeType}"/>
     </changeSet>
 
     <!-- jhipster-needle-liquibase-add-changeset - JHipster will add changesets here -->
@@ -41,11 +41,11 @@
           This can be customized by adding or removing 'faker' in the 'spring.liquibase.contexts'
           Spring Boot configuration key.
     -->
-    <changeSet id="20250907025503-1-data" author="jhipster" context="faker">
+    <changeSet id="20250907025503-1-data" author="quattt" context="faker">
         <loadData
                   file="config/liquibase/fake-data/chatbot_log.csv"
                   separator=";"
-                  tableName="chatbot_log"
+                  tableName="chatbot_logs"
                   usePreparedStatements="true">
             <column name="id" type="numeric"/>
             <column name="question" type="clob"/>

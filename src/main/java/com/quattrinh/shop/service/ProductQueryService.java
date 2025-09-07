@@ -47,6 +47,8 @@ public class ProductQueryService extends QueryService<Product> {
     public Page<ProductDTO> findByCriteria(ProductCriteria criteria, Pageable page) {
         LOG.debug("find by criteria : {}, page: {}", criteria, page);
         final Specification<Product> specification = createSpecification(criteria);
+        Page<Product> products = productRepository.findAll(specification, page);
+        System.out.println("call");
         return productRepository.fetchBagRelationships(productRepository.findAll(specification, page)).map(productMapper::toDto);
     }
 

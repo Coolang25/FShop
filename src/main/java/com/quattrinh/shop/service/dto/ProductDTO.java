@@ -20,7 +20,6 @@ public class ProductDTO implements Serializable {
     @Size(max = 255)
     private String name;
 
-    @Lob
     private String description;
 
     private BigDecimal basePrice;

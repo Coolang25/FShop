@@ -8,13 +8,13 @@
     <!--
         Added the constraints for entity ProductImage.
     -->
-    <changeSet id="20250907024403-2" author="jhipster">
+    <changeSet id="20250907024403-2" author="quattt">
 
         <addForeignKeyConstraint baseColumnNames="product_id"
-                                 baseTableName="product_image"
-                                 constraintName="fk_product_image__product_id"
+                                 baseTableName="product_images"
+                                 constraintName="fk_product_images__product_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="product"
+                                 referencedTableName="products"
                                  />
     </changeSet>
 </databaseChangeLog>

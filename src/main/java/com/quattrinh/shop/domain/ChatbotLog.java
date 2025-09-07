@@ -11,7 +11,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
  * A ChatbotLog.
  */
 @Entity
-@Table(name = "chatbot_log")
+@Table(name = "chatbot_logs")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
 public class ChatbotLog implements Serializable {
@@ -19,17 +19,14 @@ public class ChatbotLog implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
-    @SequenceGenerator(name = "sequenceGenerator")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
-    @Lob
-    @Column(name = "question", nullable = false)
+    @Column(name = "question", nullable = false, columnDefinition = "text")
     private String question;
 
-    @Lob
-    @Column(name = "answer")
+    @Column(name = "answer", columnDefinition = "text")
     private String answer;
 
     @Column(name = "created_at")

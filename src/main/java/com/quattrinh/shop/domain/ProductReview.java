@@ -12,7 +12,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
  * A ProductReview.
  */
 @Entity
-@Table(name = "product_review")
+@Table(name = "product_reviews")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
 public class ProductReview implements Serializable {
@@ -20,8 +20,7 @@ public class ProductReview implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
-    @SequenceGenerator(name = "sequenceGenerator")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
@@ -31,8 +30,7 @@ public class ProductReview implements Serializable {
     @Column(name = "rating", nullable = false)
     private Integer rating;
 
-    @Lob
-    @Column(name = "comment")
+    @Column(name = "comment", columnDefinition = "text")
     private String comment;
 
     @Column(name = "created_at")

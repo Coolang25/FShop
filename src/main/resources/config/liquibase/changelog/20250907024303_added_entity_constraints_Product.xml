@@ -8,20 +8,20 @@
     <!--
         Added the constraints for entity Product.
     -->
-    <changeSet id="20250907024303-2" author="jhipster">
+    <changeSet id="20250907024303-2" author="quattt">
 
         <addForeignKeyConstraint baseColumnNames="product_id"
-                                 baseTableName="rel_product__categories"
-                                 constraintName="fk_rel_product__categories__product_id"
+                                 baseTableName="rel_products__categories"
+                                 constraintName="fk_rel_products__categories__product_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="product"
+                                 referencedTableName="products"
                                  />
 
-        <addForeignKeyConstraint baseColumnNames="categories_id"
-                                 baseTableName="rel_product__categories"
-                                 constraintName="fk_rel_product__categories__categories_id"
+        <addForeignKeyConstraint baseColumnNames="category_id"
+                                 baseTableName="rel_products__categories"
+                                 constraintName="fk_rel_products__categories__category_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="category"
+                                 referencedTableName="categories"
                                  />
     </changeSet>
 </databaseChangeLog>

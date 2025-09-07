@@ -8,13 +8,13 @@
     <!--
         Added the constraints for entity ProductVariant.
     -->
-    <changeSet id="20250907024703-2" author="jhipster">
+    <changeSet id="20250907024703-2" author="quattt">
 
         <addForeignKeyConstraint baseColumnNames="product_id"
-                                 baseTableName="product_variant"
-                                 constraintName="fk_product_variant__product_id"
+                                 baseTableName="product_variants"
+                                 constraintName="fk_product_variants__product_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="product"
+                                 referencedTableName="products"
                                  />
     </changeSet>
 </databaseChangeLog>

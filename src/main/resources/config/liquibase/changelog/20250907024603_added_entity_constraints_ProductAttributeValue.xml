@@ -8,13 +8,13 @@
     <!--
         Added the constraints for entity ProductAttributeValue.
     -->
-    <changeSet id="20250907024603-2" author="jhipster">
+    <changeSet id="20250907024603-2" author="quattt">
 
         <addForeignKeyConstraint baseColumnNames="attribute_id"
-                                 baseTableName="product_attribute_value"
-                                 constraintName="fk_product_attribute_value__attribute_id"
+                                 baseTableName="product_attribute_values"
+                                 constraintName="fk_product_attribute_values__attribute_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="product_attribute"
+                                 referencedTableName="product_attributes"
                                  />
     </changeSet>
 </databaseChangeLog>

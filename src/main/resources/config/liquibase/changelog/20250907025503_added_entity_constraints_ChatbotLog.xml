@@ -8,13 +8,13 @@
     <!--
         Added the constraints for entity ChatbotLog.
     -->
-    <changeSet id="20250907025503-2" author="jhipster">
+    <changeSet id="20250907025503-2" author="quattt">
 
         <addForeignKeyConstraint baseColumnNames="user_id"
-                                 baseTableName="chatbot_log"
-                                 constraintName="fk_chatbot_log__user_id"
+                                 baseTableName="chatbot_logs"
+                                 constraintName="fk_chatbot_logs__user_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="jhi_user"
+                                 referencedTableName="users"
                                  />
     </changeSet>
 </databaseChangeLog>

@@ -9,9 +9,9 @@
     <!--
         Added the entity Category.
     -->
-    <changeSet id="20250907024203-1" author="jhipster">
-        <createTable tableName="category">
-            <column name="id" type="bigint">
+    <changeSet id="20250907024203-1" author="quattt">
+        <createTable tableName="categories">
+            <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="name" type="varchar(255)">
@@ -31,11 +31,11 @@
           This can be customized by adding or removing 'faker' in the 'spring.liquibase.contexts'
           Spring Boot configuration key.
     -->
-    <changeSet id="20250907024203-1-data" author="jhipster" context="faker">
+    <changeSet id="20250907024203-1-data" author="quattt" context="faker">
         <loadData
                   file="config/liquibase/fake-data/category.csv"
                   separator=";"
-                  tableName="category"
+                  tableName="categories"
                   usePreparedStatements="true">
             <column name="id" type="numeric"/>
             <column name="name" type="string"/>

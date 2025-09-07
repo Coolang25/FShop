@@ -32,9 +32,10 @@ spring:
       indent-output: true
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
-    url: jdbc:postgresql://localhost:5432/FShop
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5532/FShop
     username: FShop
-    password: password
+    password: fshop
     hikari:
       poolName: Hikari
       auto-commit: false

@@ -39,8 +39,10 @@ public class DomainUserDetailsService implements UserDetailsService {
                 .map(user -> createSpringSecurityUser(login, user))
                 .orElseThrow(() -> new UsernameNotFoundException("User with email " + login + " was not found in the database"));
         }
+        Optional<User> test = userRepository.findOneWithAuthoritiesByLogin("admin");
 
         String lowercaseLogin = login.toLowerCase(Locale.ENGLISH);
+
         return userRepository
             .findOneWithAuthoritiesByLogin(lowercaseLogin)
             .map(user -> createSpringSecurityUser(lowercaseLogin, user))

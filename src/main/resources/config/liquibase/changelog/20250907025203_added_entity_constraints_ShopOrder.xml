@@ -8,13 +8,13 @@
     <!--
         Added the constraints for entity ShopOrder.
     -->
-    <changeSet id="20250907025203-2" author="jhipster">
+    <changeSet id="20250907025203-2" author="quattt">
 
         <addForeignKeyConstraint baseColumnNames="user_id"
-                                 baseTableName="shop_order"
-                                 constraintName="fk_shop_order__user_id"
+                                 baseTableName="shop_orders"
+                                 constraintName="fk_shop_orders__user_id"
                                  referencedColumnNames="id"
-                                 referencedTableName="jhi_user"
+                                 referencedTableName="users"
                                  />
     </changeSet>
 </databaseChangeLog>

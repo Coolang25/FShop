@@ -9,9 +9,9 @@
     <!--
         Added the entity ProductImage.
     -->
-    <changeSet id="20250907024403-1" author="jhipster">
-        <createTable tableName="product_image">
-            <column name="id" type="bigint">
+    <changeSet id="20250907024403-1" author="quattt">
+        <createTable tableName="product_images">
+            <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="url" type="varchar(255)">
@@ -37,11 +37,11 @@
           This can be customized by adding or removing 'faker' in the 'spring.liquibase.contexts'
           Spring Boot configuration key.
     -->
-    <changeSet id="20250907024403-1-data" author="jhipster" context="faker">
+    <changeSet id="20250907024403-1-data" author="quattt" context="faker">
         <loadData
                   file="config/liquibase/fake-data/product_image.csv"
                   separator=";"
-                  tableName="product_image"
+                  tableName="product_images"
                   usePreparedStatements="true">
             <column name="id" type="numeric"/>
             <column name="url" type="string"/>

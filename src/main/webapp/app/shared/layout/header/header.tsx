@@ -2,7 +2,7 @@ import './header.scss';
 
 import React, { useState } from 'react';
 import { Storage, Translate } from 'react-jhipster';
-//import { Collapse, Nav, Navbar, NavbarToggler } from 'reactstrap';
+// import { Collapse, Nav, Navbar, NavbarToggler } from 'reactstrap';
 import LoadingBar from 'react-redux-loading-bar';
 
 import { useAppDispatch } from 'app/config/store';

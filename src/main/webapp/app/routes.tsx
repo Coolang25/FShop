@@ -8,12 +8,16 @@ import Activate from 'app/modules/account/activate/activate';
 import PasswordResetInit from 'app/modules/account/password-reset/init/password-reset-init';
 import PasswordResetFinish from 'app/modules/account/password-reset/finish/password-reset-finish';
 import Logout from 'app/modules/login/logout';
-import Home from 'app/modules/home/home';
 import EntitiesRoutes from 'app/entities/routes';
 import PrivateRoute from 'app/shared/auth/private-route';
 import ErrorBoundaryRoutes from 'app/shared/error/error-boundary-routes';
 import PageNotFound from 'app/shared/error/page-not-found';
 import { AUTHORITIES } from 'app/config/constants';
+import Home from './modules/home';
+import Shop from './modules/shop';
+import ProductPage from './modules/product';
+import ShopCart from './modules/cart';
+import Checkout from './modules/checkout';
 
 const loading = <div>loading ...</div>;
 
@@ -31,6 +35,10 @@ const AppRoutes = () => {
     <div className="view-routes">
       <ErrorBoundaryRoutes>
         <Route index element={<Home />} />
+        <Route path="shop" element={<Shop />} />
+        <Route path="product" element={<ProductPage />} />
+        <Route path="cart" element={<ShopCart />} />
+        <Route path="checkout" element={<Checkout />} />
         <Route path="login" element={<Login />} />
         <Route path="logout" element={<Logout />} />
         <Route path="account">
@@ -54,17 +62,18 @@ const AppRoutes = () => {
           element={
             <PrivateRoute hasAnyAuthorities={[AUTHORITIES.ADMIN]}>
               <Admin />
+              <EntitiesRoutes />
             </PrivateRoute>
           }
         />
-        <Route
+        {/* <Route
           path="*"
           element={
             <PrivateRoute hasAnyAuthorities={[AUTHORITIES.USER]}>
               <EntitiesRoutes />
             </PrivateRoute>
           }
-        />
+        /> */}
         <Route path="*" element={<PageNotFound />} />
       </ErrorBoundaryRoutes>
     </div>

@@ -1,10 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Form, Modal, Badge, InputGroup, Alert } from 'react-bootstrap';
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaFolder, FaFolderOpen, FaChevronRight, FaChevronDown, FaTag, FaBox } from 'react-icons/fa';
+import React, { useState, useEffect, useRef } from 'react';
+import { Container, Row, Col, Card, Table, Button, Form, Modal, Badge, InputGroup, Alert, Spinner, ProgressBar } from 'react-bootstrap';
+import {
+  FaPlus,
+  FaEdit,
+  FaTrash,
+  FaSearch,
+  FaFolder,
+  FaFolderOpen,
+  FaChevronRight,
+  FaChevronDown,
+  FaTag,
+  FaBox,
+  FaUpload,
+  FaImage,
+} from 'react-icons/fa';
+import { useAppDispatch, useAppSelector } from '../../../config/store';
+import {
+  uploadImage,
+  setUploadProgress,
+  clearUploadProgress,
+  clearUploadedUrl,
+  reset as resetUpload,
+} from '../../../shared/reducers/upload.reducer';
+import { createEntity, updateEntity, getEntities, deleteEntity } from '../../../entities/category/category.reducer';
+import { ICategory } from '../../../shared/model/category.model';
 
-interface Category {
-  id: number;
-  name: string;
+interface Category extends ICategory {
   parentId?: number;
   children?: Category[];
   productCount: number;
@@ -14,6 +35,13 @@ interface Category {
 }
 
 const CategoryManagement = () => {
+  const dispatch = useAppDispatch();
+
+  // Redux state
+  const uploadState = useAppSelector(state => state.upload);
+  const categoryState = useAppSelector(state => state.category);
+
+  // Local state
   const [categories, setCategories] = useState<Category[]>([]);
   const [flatCategories, setFlatCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,10 +51,12 @@ const CategoryManagement = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [formData, setFormData] = useState({
     name: '',
+    image: '',
     parentId: '',
     isActive: true,
   });
@@ -35,151 +65,56 @@ const CategoryManagement = () => {
     fetchCategories();
   }, []);
 
-  const fetchCategories = () => {
-    try {
-      // Mock data - replace with actual API call
-      const mockCategories: Category[] = [
-        {
-          id: 1,
-          name: "Men's Fashion",
-          parentId: null,
-          productCount: 45,
-          isActive: true,
-          createdAt: '2024-01-15',
-          level: 0,
-          children: [
-            {
-              id: 2,
-              name: 'T-Shirts',
-              parentId: 1,
-              productCount: 15,
-              isActive: true,
-              createdAt: '2024-01-15',
-              level: 1,
-            },
-            {
-              id: 3,
-              name: 'Shirts',
-              parentId: 1,
-              productCount: 10,
-              isActive: true,
-              createdAt: '2024-01-15',
-              level: 1,
-            },
-            {
-              id: 4,
-              name: 'Jeans',
-              parentId: 1,
-              productCount: 12,
-              isActive: true,
-              createdAt: '2024-01-15',
-              level: 1,
-            },
-            {
-              id: 5,
-              name: 'Pants',
-              parentId: 1,
-              productCount: 8,
-              isActive: true,
-              createdAt: '2024-01-15',
-              level: 1,
-            },
-          ],
-        },
-        {
-          id: 6,
-          name: "Women's Fashion",
-          parentId: null,
-          productCount: 67,
-          isActive: true,
-          createdAt: '2024-01-15',
-          level: 0,
-          children: [
-            {
-              id: 7,
-              name: 'Dresses',
-              parentId: 6,
-              productCount: 25,
-              isActive: true,
-              createdAt: '2024-01-15',
-              level: 1,
-            },
-            {
-              id: 8,
-              name: 'Tops',
-              parentId: 6,
-              productCount: 20,
-              isActive: true,
-              createdAt: '2024-01-15',
-              level: 1,
-            },
-            {
-              id: 9,
-              name: 'Skirts',
-              parentId: 6,
-              productCount: 12,
-              isActive: true,
-              createdAt: '2024-01-15',
-              level: 1,
-            },
-            {
-              id: 10,
-              name: 'Pants',
-              parentId: 6,
-              productCount: 10,
-              isActive: true,
-              createdAt: '2024-01-15',
-              level: 1,
-            },
-          ],
-        },
-        {
-          id: 11,
-          name: 'Accessories',
-          parentId: null,
-          productCount: 23,
-          isActive: true,
-          createdAt: '2024-01-15',
-          level: 0,
-          children: [
-            {
-              id: 12,
-              name: 'Bags',
-              parentId: 11,
-              productCount: 8,
-              isActive: true,
-              createdAt: '2024-01-15',
-              level: 1,
-            },
-            {
-              id: 13,
-              name: 'Jewelry',
-              parentId: 11,
-              productCount: 10,
-              isActive: true,
-              createdAt: '2024-01-15',
-              level: 1,
-            },
-            {
-              id: 14,
-              name: 'Watches',
-              parentId: 11,
-              productCount: 5,
-              isActive: true,
-              createdAt: '2024-01-15',
-              level: 1,
-            },
-          ],
-        },
-      ];
-
-      setCategories(mockCategories);
-      setFlatCategories(flattenCategories(mockCategories));
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    } finally {
+  useEffect(() => {
+    if (categoryState.entities && categoryState.entities.length > 0) {
+      // Transform flat entities to hierarchical structure
+      const hierarchicalCategories = buildCategoryHierarchy(categoryState.entities);
+      setCategories(hierarchicalCategories);
+      setFlatCategories(categoryState.entities);
       setLoading(false);
     }
+  }, [categoryState.entities]);
+
+  const buildCategoryHierarchy = (categoriesData: ICategory[]): Category[] => {
+    const categoryMap = new Map<number, Category>();
+    const rootCategories: Category[] = [];
+
+    // First pass: create all categories
+    categoriesData.forEach(cat => {
+      const category: Category = {
+        ...cat,
+        parentId: cat.parentId,
+        children: [],
+        productCount: 0, // Products will be managed separately
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        level: 0,
+      };
+      categoryMap.set(cat.id, category);
+    });
+
+    // Second pass: build hierarchy
+    categoriesData.forEach(cat => {
+      const category = categoryMap.get(cat.id);
+      if (category) {
+        if (cat.parentId) {
+          const parent = categoryMap.get(cat.parentId);
+          if (parent) {
+            parent.children.push(category);
+            category.level = parent.level + 1;
+          }
+        } else {
+          rootCategories.push(category);
+        }
+      }
+    });
+
+    return rootCategories;
+  };
+
+  const fetchCategories = () => {
+    setLoading(true);
+    dispatch(getEntities({}));
   };
 
   const flattenCategories = (cats: Category[], level = 0): Category[] => {
@@ -197,9 +132,14 @@ const CategoryManagement = () => {
     setEditingCategory(null);
     setFormData({
       name: '',
+      image: '',
       parentId: '',
       isActive: true,
     });
+    dispatch(resetUpload());
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
     setShowModal(true);
   };
 
@@ -207,17 +147,41 @@ const CategoryManagement = () => {
     setEditingCategory(category);
     setFormData({
       name: category.name,
+      image: category.image || '',
       parentId: category.parentId?.toString() || '',
       isActive: category.isActive,
     });
+    dispatch(resetUpload());
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
     setShowModal(true);
   };
 
-  const handleSaveCategory = () => {
-    // Handle save logic here
-    console.log('Saving category:', formData);
-    setShowModal(false);
-    fetchCategories(); // Refresh the list
+  const handleSaveCategory = async () => {
+    const categoryData: ICategory = {
+      name: formData.name,
+      image: formData.image,
+      parentId: formData.parentId ? parseInt(formData.parentId, 10) : undefined,
+    };
+
+    try {
+      if (editingCategory) {
+        await dispatch(updateEntity({ ...categoryData, id: editingCategory.id }));
+      } else {
+        await dispatch(createEntity(categoryData));
+      }
+      setShowModal(false);
+      fetchCategories(); // Refresh the list
+    } catch (error) {
+      console.error('Error saving category:', error);
+    }
+  };
+
+  const handleSaveCategoryWrapper = () => {
+    handleSaveCategory().catch(error => {
+      console.error('Save category error:', error);
+    });
   };
 
   const handleDeleteCategory = (category: Category) => {
@@ -225,12 +189,23 @@ const CategoryManagement = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    // Handle delete logic here
-    console.log('Deleting category:', categoryToDelete);
-    setShowDeleteModal(false);
-    setCategoryToDelete(null);
-    fetchCategories(); // Refresh the list
+  const confirmDelete = async () => {
+    if (categoryToDelete) {
+      try {
+        await dispatch(deleteEntity(categoryToDelete.id));
+        setShowDeleteModal(false);
+        setCategoryToDelete(null);
+        fetchCategories(); // Refresh the list
+      } catch (error) {
+        console.error('Error deleting category:', error);
+      }
+    }
+  };
+
+  const confirmDeleteWrapper = () => {
+    confirmDelete().catch(error => {
+      console.error('Delete category error:', error);
+    });
   };
 
   const toggleNode = (nodeId: number) => {
@@ -241,6 +216,63 @@ const CategoryManagement = () => {
       newExpanded.add(nodeId);
     }
     setExpandedNodes(newExpanded);
+  };
+
+  const validateImageFile = (file: File): { valid: boolean; error?: string } => {
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      return { valid: false, error: 'Please select an image file' };
+    }
+
+    // Check file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      return { valid: false, error: 'File size must be less than 5MB' };
+    }
+
+    // Check file extension
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    if (!allowedExtensions.includes(fileExtension)) {
+      return { valid: false, error: 'Only JPG, PNG, GIF, and WebP files are allowed' };
+    }
+
+    return { valid: true };
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      alert(validation.error);
+      return;
+    }
+
+    // Upload file using Redux thunk
+    const result = await dispatch(uploadImage(file));
+
+    if (uploadImage.fulfilled.match(result)) {
+      setFormData({ ...formData, image: result.payload.fileUrl });
+    } else if (uploadImage.rejected.match(result)) {
+      alert('Failed to upload image. Please try again.');
+    }
+  };
+
+  const handleFileSelectWrapper = (event: React.ChangeEvent<HTMLInputElement>) => {
+    handleFileSelect(event).catch(error => {
+      console.error('File upload error:', error);
+    });
+  };
+
+  const handleRemoveImage = () => {
+    dispatch(clearUploadedUrl());
+    setFormData({ ...formData, image: '' });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const renderParentCategories = () => {
@@ -254,7 +286,16 @@ const CategoryManagement = () => {
       <Card key={category.id} className="mb-3 border-0 shadow-sm">
         <Card.Header className="bg-primary text-white d-flex justify-content-between align-items-center">
           <div className="d-flex align-items-center">
-            <FaFolder className="me-2" />
+            {category.image ? (
+              <img
+                src={category.image}
+                alt={category.name}
+                className="me-3 rounded"
+                style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+              />
+            ) : (
+              <FaFolder className="me-2" />
+            )}
             <div>
               <h6 className="mb-0">{category.name}</h6>
               <small>{category.productCount} products</small>
@@ -279,7 +320,16 @@ const CategoryManagement = () => {
                     <div key={child.id} className="col-md-6 col-lg-4">
                       <div className="d-flex align-items-center justify-content-between p-2 border rounded bg-light">
                         <div className="d-flex align-items-center">
-                          <FaTag className="me-2 text-secondary" />
+                          {child.image ? (
+                            <img
+                              src={child.image}
+                              alt={child.name}
+                              className="me-2 rounded"
+                              style={{ width: '30px', height: '30px', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <FaTag className="me-2 text-secondary" />
+                          )}
                           <div>
                             <div className="fw-medium">{child.name}</div>
                             <small className="text-muted">{child.productCount} products</small>
@@ -440,11 +490,79 @@ const CategoryManagement = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
+              <Form.Label>Category Image</Form.Label>
+
+              {/* File Upload Area */}
+              <div className="border rounded p-3 mb-3" style={{ borderStyle: 'dashed' }}>
+                <div className="text-center">
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelectWrapper} style={{ display: 'none' }} />
+
+                  {uploadState.loading ? (
+                    <div className="py-4">
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      <span>Uploading image...</span>
+                      {uploadState.uploadProgress && (
+                        <div className="mt-2">
+                          <ProgressBar
+                            now={uploadState.uploadProgress.percentage}
+                            label={`${uploadState.uploadProgress.percentage}%`}
+                            variant="primary"
+                          />
+                          <small className="text-muted">
+                            {Math.round(uploadState.uploadProgress.loaded / 1024)} KB /{' '}
+                            {Math.round(uploadState.uploadProgress.total / 1024)} KB
+                          </small>
+                        </div>
+                      )}
+                    </div>
+                  ) : uploadState.uploadedUrl || formData.image ? (
+                    <div className="py-2">
+                      <img
+                        src={uploadState.uploadedUrl || formData.image}
+                        alt="Preview"
+                        className="rounded border mb-2"
+                        style={{ width: '120px', height: '120px', objectFit: 'cover' }}
+                        onError={e => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                      <div>
+                        <Button variant="outline-primary" size="sm" onClick={() => fileInputRef.current?.click()} className="me-2">
+                          <FaUpload className="me-1" />
+                          Change Image
+                        </Button>
+                        <Button variant="outline-danger" size="sm" onClick={handleRemoveImage}>
+                          <FaTrash className="me-1" />
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-4">
+                      <FaImage size={48} className="text-muted mb-3" />
+                      <div>
+                        <Button variant="outline-primary" onClick={() => fileInputRef.current?.click()}>
+                          <FaUpload className="me-2" />
+                          Upload Image
+                        </Button>
+                      </div>
+                      <small className="text-muted d-block mt-2">Click to select an image file (JPG, PNG, GIF - Max 5MB)</small>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Form.Text className="text-muted">
+                Upload an image for this category. The image will be displayed as a thumbnail in the category list.
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
               <Form.Label>Parent Category</Form.Label>
               <Form.Select value={formData.parentId} onChange={e => setFormData({ ...formData, parentId: e.target.value })}>
                 <option value="">None (Root Category - Level 1)</option>
-                {categories
-                  .filter(cat => !editingCategory || cat.id !== editingCategory.id)
+                {categoryState.entities
+                  .filter(cat => !cat.parentId && (!editingCategory || cat.id !== editingCategory.id))
                   .map(category => (
                     <option key={category.id} value={category.id}>
                       {category.name} (Parent Category)
@@ -469,7 +587,7 @@ const CategoryManagement = () => {
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Hủy
           </Button>
-          <Button variant="primary" onClick={handleSaveCategory}>
+          <Button variant="primary" onClick={handleSaveCategoryWrapper}>
             {editingCategory ? 'Cập nhật' : 'Thêm mới'}
           </Button>
         </Modal.Footer>
@@ -494,7 +612,7 @@ const CategoryManagement = () => {
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
             Hủy
           </Button>
-          <Button variant="danger" onClick={confirmDelete}>
+          <Button variant="danger" onClick={confirmDeleteWrapper}>
             Xóa
           </Button>
         </Modal.Footer>

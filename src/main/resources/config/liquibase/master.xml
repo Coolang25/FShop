@@ -38,8 +38,9 @@
     <include file="config/liquibase/changelog/20250907025303_added_entity_constraints_OrderItem.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20250907025403_added_entity_constraints_Payment.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20250907025503_added_entity_constraints_ChatbotLog.xml" relativeToChangelogFile="false"/>
-    <include file="config/liquibase/changelog/20250921090000_added_sub_category.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20250921090000_add_inventory_transaction.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20250921100000_added_image_column_to_category.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20250921110000_added_sub_category.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>

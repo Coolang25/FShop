@@ -13,20 +13,12 @@ import org.mapstruct.*;
  */
 @Mapper(componentModel = "spring")
 public interface CategoryMapper extends EntityMapper<CategoryDTO, Category> {
-    @Mapping(target = "products", source = "products", qualifiedByName = "productIdSet")
+    @Mapping(target = "parentId", source = "parentCategory.id")
     CategoryDTO toDto(Category s);
 
     @Mapping(target = "products", ignore = true)
     @Mapping(target = "removeProducts", ignore = true)
+    @Mapping(target = "parentCategory", ignore = true)
+    @Mapping(target = "subCategories", ignore = true)
     Category toEntity(CategoryDTO categoryDTO);
-
-    @Named("productId")
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "id", source = "id")
-    ProductDTO toDtoProductId(Product product);
-
-    @Named("productIdSet")
-    default Set<ProductDTO> toDtoProductIdSet(Set<Product> product) {
-        return product.stream().map(this::toDtoProductId).collect(Collectors.toSet());
-    }
 }

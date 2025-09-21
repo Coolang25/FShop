@@ -1,9 +1,8 @@
-import { IProduct } from 'app/shared/model/product.model';
-
 export interface ICategory {
   id?: number;
   name?: string;
-  products?: IProduct[] | null;
+  image?: string;
+  parentId?: number;
 }
 
 export const defaultValue: Readonly<ICategory> = {};

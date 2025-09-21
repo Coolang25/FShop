@@ -164,6 +164,23 @@ public class CategoryResource {
     }
 
     /**
+     * {@code GET  /categories/hierarchy} : get all categories in hierarchical structure.
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the hierarchical list of categories in body.
+     */
+    @GetMapping("/hierarchy")
+    public ResponseEntity<List<CategoryDTO>> getCategoriesHierarchy() {
+        LOG.debug("REST request to get Categories hierarchy");
+
+        // Get all categories without pagination
+        Page<CategoryDTO> page = categoryQueryService.findByCriteria(new CategoryCriteria(), Pageable.unpaged());
+        List<CategoryDTO> allCategories = page.getContent();
+
+        // Build hierarchy (this will be handled in frontend for now)
+        return ResponseEntity.ok().body(allCategories);
+    }
+
+    /**
      * {@code GET  /categories/count} : count all the categories.
      *
      * @param criteria the criteria which the requested entities should match.

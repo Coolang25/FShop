@@ -6,7 +6,7 @@
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
                         http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
-  <changeSet id="20250921-2" author="quattrinh">
+  <changeSet id="20250921090000" author="quattrinh">
     <createTable tableName="inventory_transactions">
       <column name="id" type="BIGINT">
         <constraints primaryKey="true" nullable="false"/>

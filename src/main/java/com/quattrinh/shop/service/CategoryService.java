@@ -37,6 +37,12 @@ public class CategoryService {
     public CategoryDTO save(CategoryDTO categoryDTO) {
         LOG.debug("Request to save Category : {}", categoryDTO);
         Category category = categoryMapper.toEntity(categoryDTO);
+
+        // Set parent category if parentId is provided
+        if (categoryDTO.getParentId() != null) {
+            categoryRepository.findById(categoryDTO.getParentId()).ifPresent(category::setParentCategory);
+        }
+
         category = categoryRepository.save(category);
         return categoryMapper.toDto(category);
     }
@@ -50,6 +56,14 @@ public class CategoryService {
     public CategoryDTO update(CategoryDTO categoryDTO) {
         LOG.debug("Request to update Category : {}", categoryDTO);
         Category category = categoryMapper.toEntity(categoryDTO);
+
+        // Set parent category if parentId is provided
+        if (categoryDTO.getParentId() != null) {
+            categoryRepository.findById(categoryDTO.getParentId()).ifPresent(category::setParentCategory);
+        } else {
+            category.setParentCategory(null);
+        }
+
         category = categoryRepository.save(category);
         return categoryMapper.toDto(category);
     }

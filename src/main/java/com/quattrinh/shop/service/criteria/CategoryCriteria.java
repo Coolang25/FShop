@@ -26,7 +26,9 @@ public class CategoryCriteria implements Serializable, Criteria {
 
     private StringFilter name;
 
-    private LongFilter productsId;
+    private StringFilter image;
+
+    private LongFilter parentId;
 
     private Boolean distinct;
 
@@ -35,7 +37,8 @@ public class CategoryCriteria implements Serializable, Criteria {
     public CategoryCriteria(CategoryCriteria other) {
         this.id = other.optionalId().map(LongFilter::copy).orElse(null);
         this.name = other.optionalName().map(StringFilter::copy).orElse(null);
-        this.productsId = other.optionalProductsId().map(LongFilter::copy).orElse(null);
+        this.image = other.optionalImage().map(StringFilter::copy).orElse(null);
+        this.parentId = other.optionalParentId().map(LongFilter::copy).orElse(null);
         this.distinct = other.distinct;
     }
 
@@ -82,23 +85,42 @@ public class CategoryCriteria implements Serializable, Criteria {
         this.name = name;
     }
 
-    public LongFilter getProductsId() {
-        return productsId;
+    public StringFilter getImage() {
+        return image;
     }
 
-    public Optional<LongFilter> optionalProductsId() {
-        return Optional.ofNullable(productsId);
+    public Optional<StringFilter> optionalImage() {
+        return Optional.ofNullable(image);
     }
 
-    public LongFilter productsId() {
-        if (productsId == null) {
-            setProductsId(new LongFilter());
+    public StringFilter image() {
+        if (image == null) {
+            setImage(new StringFilter());
         }
-        return productsId;
+        return image;
     }
 
-    public void setProductsId(LongFilter productsId) {
-        this.productsId = productsId;
+    public void setImage(StringFilter image) {
+        this.image = image;
+    }
+
+    public LongFilter getParentId() {
+        return parentId;
+    }
+
+    public Optional<LongFilter> optionalParentId() {
+        return Optional.ofNullable(parentId);
+    }
+
+    public LongFilter parentId() {
+        if (parentId == null) {
+            setParentId(new LongFilter());
+        }
+        return parentId;
+    }
+
+    public void setParentId(LongFilter parentId) {
+        this.parentId = parentId;
     }
 
     public Boolean getDistinct() {
@@ -132,14 +154,15 @@ public class CategoryCriteria implements Serializable, Criteria {
         return (
             Objects.equals(id, that.id) &&
             Objects.equals(name, that.name) &&
-            Objects.equals(productsId, that.productsId) &&
+            Objects.equals(image, that.image) &&
+            Objects.equals(parentId, that.parentId) &&
             Objects.equals(distinct, that.distinct)
         );
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, productsId, distinct);
+        return Objects.hash(id, name, image, parentId, distinct);
     }
 
     // prettier-ignore
@@ -148,7 +171,8 @@ public class CategoryCriteria implements Serializable, Criteria {
         return "CategoryCriteria{" +
             optionalId().map(f -> "id=" + f + ", ").orElse("") +
             optionalName().map(f -> "name=" + f + ", ").orElse("") +
-            optionalProductsId().map(f -> "productsId=" + f + ", ").orElse("") +
+            optionalImage().map(f -> "image=" + f + ", ").orElse("") +
+            optionalParentId().map(f -> "parentId=" + f + ", ").orElse("") +
             optionalDistinct().map(f -> "distinct=" + f + ", ").orElse("") +
         "}";
     }

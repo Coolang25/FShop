@@ -30,6 +30,9 @@ public class Category implements Serializable {
     @Column(name = "name", length = 255, nullable = false)
     private String name;
 
+    @Column(name = "image", nullable = true)
+    private String image;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     @JsonIgnoreProperties(value = { "subCategories", "products", "parentCategory" }, allowSetters = true)
@@ -101,6 +104,47 @@ public class Category implements Serializable {
     public Category removeProducts(Product product) {
         this.products.remove(product);
         product.getCategories().remove(this);
+        return this;
+    }
+
+    public Category getParentCategory() {
+        return parentCategory;
+    }
+
+    public void setParentCategory(Category parentCategory) {
+        this.parentCategory = parentCategory;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
+    public Set<Category> getSubCategories() {
+        return this.subCategories;
+    }
+
+    public void setSubCategories(Set<Category> subCategories) {
+        this.subCategories = subCategories;
+    }
+
+    public Category subCategories(Set<Category> subCategories) {
+        this.setSubCategories(subCategories);
+        return this;
+    }
+
+    public Category addSubCategories(Category category) {
+        this.subCategories.add(category);
+        category.setParentCategory(this);
+        return this;
+    }
+
+    public Category removeSubCategories(Category category) {
+        this.subCategories.remove(category);
+        category.setParentCategory(null);
         return this;
     }
 

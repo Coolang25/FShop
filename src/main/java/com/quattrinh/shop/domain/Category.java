@@ -30,6 +30,16 @@ public class Category implements Serializable {
     @Column(name = "name", length = 255, nullable = false)
     private String name;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    @JsonIgnoreProperties(value = { "subCategories", "products", "parentCategory" }, allowSetters = true)
+    private Category parentCategory;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "parentCategory", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @JsonIgnoreProperties(value = { "parentCategory", "products" }, allowSetters = true)
+    private Set<Category> subCategories = new HashSet<>();
+
     @ManyToMany(fetch = FetchType.LAZY, mappedBy = "categories")
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @JsonIgnoreProperties(value = { "categories" }, allowSetters = true)

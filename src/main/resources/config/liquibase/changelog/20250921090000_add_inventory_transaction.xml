@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+  <changeSet id="20250921-2" author="quattrinh">
+    <createTable tableName="inventory_transactions">
+      <column name="id" type="BIGINT">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="type" type="varchar(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="quantity" type="INT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="note" type="VARCHAR(1000)"/>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="variant_id" type="BIGINT"/>
+      <column name="order_id" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
+    </createTable>
+
+    <addForeignKeyConstraint
+      baseTableName="inventory_transactions"
+      baseColumnNames="variant_id"
+      constraintName="fk_inventory_transactions_variants"
+      referencedTableName="product_variants"
+      referencedColumnNames="id"/>
+
+    <addForeignKeyConstraint
+      baseTableName="inventory_transactions"
+      baseColumnNames="order_id"
+      constraintName="fk_inventory_transactions_orders"
+      referencedTableName="shop_orders"
+      referencedColumnNames="id"/>
+  </changeSet>
+
+</databaseChangeLog>

@@ -2,32 +2,29 @@ import React from 'react';
 import { Route } from 'react-router-dom';
 import Loadable from 'react-loadable';
 
-import Login from 'app/modules/login/login';
-import Register from 'app/modules/account/register/register';
-import Activate from 'app/modules/account/activate/activate';
-import PasswordResetInit from 'app/modules/account/password-reset/init/password-reset-init';
-import PasswordResetFinish from 'app/modules/account/password-reset/finish/password-reset-finish';
-import Logout from 'app/modules/login/logout';
+import Register from 'app/modules/public/auth/register/register';
+import Activate from 'app/modules/shared/auth/activate/activate';
+import PasswordResetInit from 'app/modules/shared/auth/password-reset/init/password-reset-init';
+import PasswordResetFinish from 'app/modules/shared/auth/password-reset/finish/password-reset-finish';
 import EntitiesRoutes from 'app/entities/routes';
 import PrivateRoute from 'app/shared/auth/private-route';
 import ErrorBoundaryRoutes from 'app/shared/error/error-boundary-routes';
 import PageNotFound from 'app/shared/error/page-not-found';
-import { AUTHORITIES } from 'app/config/constants';
-import Home from './modules/home';
-import Shop from './modules/shop';
-import ProductPage from './modules/product';
-import ShopCart from './modules/cart';
-import Checkout from './modules/checkout';
+import { Home, Login, Shop } from './modules/public';
+import ProductPage from './modules/public/product';
+import ShopCart from './modules/user/cart';
+import { Checkout, Logout } from './modules/user';
+import { AUTHORITIES } from './config/constants';
 
 const loading = <div>loading ...</div>;
 
 const Account = Loadable({
-  loader: () => import(/* webpackChunkName: "account" */ 'app/modules/account'),
+  loader: () => import(/* webpackChunkName: "account" */ 'app/modules/user/account'),
   loading: () => loading,
 });
 
 const Admin = Loadable({
-  loader: () => import(/* webpackChunkName: "administration" */ 'app/modules/administration'),
+  loader: () => import(/* webpackChunkName: "admin" */ 'app/modules/admin/routes'),
   loading: () => loading,
 });
 const AppRoutes = () => {
@@ -57,15 +54,15 @@ const AppRoutes = () => {
             <Route path="finish" element={<PasswordResetFinish />} />
           </Route>
         </Route>
-        <Route
+        {/* <Route
           path="admin/*"
           element={
             <PrivateRoute hasAnyAuthorities={[AUTHORITIES.ADMIN]}>
               <Admin />
-              <EntitiesRoutes />
             </PrivateRoute>
           }
-        />
+        /> */}
+        <Route path="admin/*" element={<Admin />} />
         {/* <Route
           path="*"
           element={

@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { convertDateTimeFromServer, convertDateTimeToServer, displayDefaultDateTime } from 'app/shared/util/date-utils';
 import { useAppDispatch, useAppSelector } from 'app/config/store';
 
-import { getUsers } from 'app/modules/administration/user-management/user-management.reducer';
+import { getUsers } from 'app/modules/admin/monitoring/user-management/user-management.reducer';
 import { createEntity, getEntity, reset, updateEntity } from './chatbot-log.reducer';
 
 export const ChatbotLogUpdate = () => {

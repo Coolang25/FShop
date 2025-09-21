@@ -1,0 +1,4 @@
+export { default as AppRouter } from './AppRouter';
+export { default as PublicRoutes } from './PublicRoutes';
+export { default as UserRoutes } from './UserRoutes';
+export { default as AdminRoutes } from './AdminRoutes';

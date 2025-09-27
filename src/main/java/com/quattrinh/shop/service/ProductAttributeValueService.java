@@ -1,8 +1,10 @@
 package com.quattrinh.shop.service;
 
+import com.quattrinh.shop.domain.ProductAttribute;
 import com.quattrinh.shop.domain.ProductAttributeValue;
 import com.quattrinh.shop.repository.ProductAttributeValueRepository;
 import com.quattrinh.shop.service.dto.ProductAttributeValueDTO;
+import com.quattrinh.shop.service.dto.ProductAttributeValueRequestDTO;
 import com.quattrinh.shop.service.mapper.ProductAttributeValueMapper;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -39,9 +41,11 @@ public class ProductAttributeValueService {
      * @param productAttributeValueDTO the entity to save.
      * @return the persisted entity.
      */
-    public ProductAttributeValueDTO save(ProductAttributeValueDTO productAttributeValueDTO) {
+    public ProductAttributeValueDTO save(ProductAttributeValueRequestDTO productAttributeValueDTO) {
         LOG.debug("Request to save ProductAttributeValue : {}", productAttributeValueDTO);
-        ProductAttributeValue productAttributeValue = productAttributeValueMapper.toEntity(productAttributeValueDTO);
+        ProductAttributeValue productAttributeValue = new ProductAttributeValue()
+            .value(productAttributeValueDTO.getValue())
+            .attribute(new ProductAttribute().id(productAttributeValueDTO.getAttributeId()));
         productAttributeValue = productAttributeValueRepository.save(productAttributeValue);
         return productAttributeValueMapper.toDto(productAttributeValue);
     }
@@ -52,9 +56,12 @@ public class ProductAttributeValueService {
      * @param productAttributeValueDTO the entity to save.
      * @return the persisted entity.
      */
-    public ProductAttributeValueDTO update(ProductAttributeValueDTO productAttributeValueDTO) {
+    public ProductAttributeValueDTO update(Long id, ProductAttributeValueRequestDTO productAttributeValueDTO) {
         LOG.debug("Request to update ProductAttributeValue : {}", productAttributeValueDTO);
-        ProductAttributeValue productAttributeValue = productAttributeValueMapper.toEntity(productAttributeValueDTO);
+        ProductAttributeValue productAttributeValue = new ProductAttributeValue()
+            .id(id)
+            .value(productAttributeValueDTO.getValue())
+            .attribute(new ProductAttribute().id(productAttributeValueDTO.getAttributeId()));
         productAttributeValue = productAttributeValueRepository.save(productAttributeValue);
         return productAttributeValueMapper.toDto(productAttributeValue);
     }

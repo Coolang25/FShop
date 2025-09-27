@@ -4,7 +4,9 @@ import com.quattrinh.shop.repository.ProductAttributeRepository;
 import com.quattrinh.shop.service.ProductAttributeQueryService;
 import com.quattrinh.shop.service.ProductAttributeService;
 import com.quattrinh.shop.service.criteria.ProductAttributeCriteria;
+import com.quattrinh.shop.service.dto.AttributeWithValuesDTO;
 import com.quattrinh.shop.service.dto.ProductAttributeDTO;
+import com.quattrinh.shop.service.mapper.AttributeWithValuesMapper;
 import com.quattrinh.shop.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -46,14 +48,18 @@ public class ProductAttributeResource {
 
     private final ProductAttributeQueryService productAttributeQueryService;
 
+    private final AttributeWithValuesMapper attributeWithValuesMapper;
+
     public ProductAttributeResource(
         ProductAttributeService productAttributeService,
         ProductAttributeRepository productAttributeRepository,
-        ProductAttributeQueryService productAttributeQueryService
+        ProductAttributeQueryService productAttributeQueryService,
+        AttributeWithValuesMapper attributeWithValuesMapper
     ) {
         this.productAttributeService = productAttributeService;
         this.productAttributeRepository = productAttributeRepository;
         this.productAttributeQueryService = productAttributeQueryService;
+        this.attributeWithValuesMapper = attributeWithValuesMapper;
     }
 
     /**

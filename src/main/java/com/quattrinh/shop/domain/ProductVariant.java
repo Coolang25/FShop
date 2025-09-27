@@ -38,6 +38,12 @@ public class ProductVariant implements Serializable {
     @Column(name = "stock", nullable = false)
     private Integer stock;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnoreProperties(value = { "categories" }, allowSetters = true)
     private Product product;
@@ -96,6 +102,32 @@ public class ProductVariant implements Serializable {
         this.stock = stock;
     }
 
+    public String getImageUrl() {
+        return this.imageUrl;
+    }
+
+    public ProductVariant imageUrl(String imageUrl) {
+        this.setImageUrl(imageUrl);
+        return this;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public Boolean getIsActive() {
+        return this.isActive;
+    }
+
+    public ProductVariant isActive(Boolean isActive) {
+        this.setIsActive(isActive);
+        return this;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
     public Product getProduct() {
         return this.product;
     }
@@ -136,6 +168,8 @@ public class ProductVariant implements Serializable {
             ", sku='" + getSku() + "'" +
             ", price=" + getPrice() +
             ", stock=" + getStock() +
+            ", imageUrl='" + getImageUrl() + "'" +
+            ", isActive=" + getIsActive() +
             "}";
     }
 }

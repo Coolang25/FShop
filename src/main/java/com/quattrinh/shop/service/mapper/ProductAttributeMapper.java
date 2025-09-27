@@ -7,5 +7,5 @@ import org.mapstruct.*;
 /**
  * Mapper for the entity {@link ProductAttribute} and its DTO {@link ProductAttributeDTO}.
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = { ProductAttributeValueMapper.class })
 public interface ProductAttributeMapper extends EntityMapper<ProductAttributeDTO, ProductAttribute> {}

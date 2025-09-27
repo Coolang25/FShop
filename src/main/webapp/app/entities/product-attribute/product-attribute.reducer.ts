@@ -4,6 +4,18 @@ import { cleanEntity } from 'app/shared/util/entity-utils';
 import { EntityState, IQueryParams, createEntitySlice, serializeAxiosError } from 'app/shared/reducers/reducer.utils';
 import { IProductAttribute, defaultValue } from 'app/shared/model/product-attribute.model';
 
+// Types for simplified API
+export interface AttributeValue {
+  id: number;
+  value: string;
+}
+
+export interface AttributeWithValues {
+  id: number;
+  name: string;
+  values: AttributeValue[];
+}
+
 const initialState: EntityState<IProductAttribute> = {
   loading: false,
   errorMessage: null,
@@ -23,6 +35,15 @@ export const getEntities = createAsyncThunk(
   async ({ page, size, sort }: IQueryParams) => {
     const requestUrl = `${apiUrl}?${sort ? `page=${page}&size=${size}&sort=${sort}&` : ''}cacheBuster=${new Date().getTime()}`;
     return axios.get<IProductAttribute[]>(requestUrl);
+  },
+  { serializeError: serializeAxiosError },
+);
+
+export const getEntitiesSimplified = createAsyncThunk(
+  'productAttribute/fetch_entity_list_simplified',
+  async () => {
+    const requestUrl = `${apiUrl}?cacheBuster=${new Date().getTime()}`;
+    return axios.get<AttributeWithValues[]>(requestUrl);
   },
   { serializeError: serializeAxiosError },
 );
@@ -77,6 +98,39 @@ export const deleteEntity = createAsyncThunk(
   { serializeError: serializeAxiosError },
 );
 
+// Attribute Value Actions
+const attributeValueApiUrl = 'api/product-attribute-values';
+
+export const createAttributeValue = createAsyncThunk(
+  'productAttribute/create_attribute_value',
+  async ({ value, attributeId }: { value: string; attributeId: number }, thunkAPI) => {
+    const result = await axios.post(attributeValueApiUrl, { value, attributeId });
+    thunkAPI.dispatch(getEntitiesSimplified());
+    return result;
+  },
+  { serializeError: serializeAxiosError },
+);
+
+export const updateAttributeValue = createAsyncThunk(
+  'productAttribute/update_attribute_value',
+  async ({ id, value, attributeId }: { id: number; value: string; attributeId: number }, thunkAPI) => {
+    const result = await axios.put(`${attributeValueApiUrl}/${id}`, { value, attributeId });
+    thunkAPI.dispatch(getEntitiesSimplified());
+    return result;
+  },
+  { serializeError: serializeAxiosError },
+);
+
+export const deleteAttributeValue = createAsyncThunk(
+  'productAttribute/delete_attribute_value',
+  async (id: number, thunkAPI) => {
+    const result = await axios.delete(`${attributeValueApiUrl}/${id}`);
+    thunkAPI.dispatch(getEntitiesSimplified());
+    return result;
+  },
+  { serializeError: serializeAxiosError },
+);
+
 // slice
 
 export const ProductAttributeSlice = createEntitySlice({
@@ -103,22 +157,47 @@ export const ProductAttributeSlice = createEntitySlice({
           totalItems: parseInt(headers['x-total-count'], 10),
         };
       })
+      .addMatcher(isFulfilled(getEntitiesSimplified), (state, action) => {
+        const { data } = action.payload;
+
+        return {
+          ...state,
+          loading: false,
+          entities: data,
+        };
+      })
       .addMatcher(isFulfilled(createEntity, updateEntity, partialUpdateEntity), (state, action) => {
         state.updating = false;
         state.loading = false;
         state.updateSuccess = true;
         state.entity = action.payload.data;
       })
-      .addMatcher(isPending(getEntities, getEntity), state => {
+      .addMatcher(isFulfilled(createAttributeValue, updateAttributeValue, deleteAttributeValue), state => {
+        state.updating = false;
+        state.loading = false;
+        state.updateSuccess = true;
+      })
+      .addMatcher(isPending(getEntities, getEntitiesSimplified, getEntity), state => {
         state.errorMessage = null;
         state.updateSuccess = false;
         state.loading = true;
       })
-      .addMatcher(isPending(createEntity, updateEntity, partialUpdateEntity, deleteEntity), state => {
-        state.errorMessage = null;
-        state.updateSuccess = false;
-        state.updating = true;
-      });
+      .addMatcher(
+        isPending(
+          createEntity,
+          updateEntity,
+          partialUpdateEntity,
+          deleteEntity,
+          createAttributeValue,
+          updateAttributeValue,
+          deleteAttributeValue,
+        ),
+        state => {
+          state.errorMessage = null;
+          state.updateSuccess = false;
+          state.updating = true;
+        },
+      );
   },
 });
 

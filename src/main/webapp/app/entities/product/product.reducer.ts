@@ -27,6 +27,15 @@ export const getEntities = createAsyncThunk(
   { serializeError: serializeAxiosError },
 );
 
+export const getEntitiesWithVariants = createAsyncThunk(
+  'product/fetch_entity_list_with_variants',
+  async ({ page, size, sort }: IQueryParams) => {
+    const requestUrl = `${apiUrl}/with-variants?${sort ? `page=${page}&size=${size}&sort=${sort}&` : ''}cacheBuster=${new Date().getTime()}`;
+    return axios.get<IProduct[]>(requestUrl);
+  },
+  { serializeError: serializeAxiosError },
+);
+
 export const getEntity = createAsyncThunk(
   'product/fetch_entity',
   async (id: string | number) => {
@@ -77,6 +86,17 @@ export const deleteEntity = createAsyncThunk(
   { serializeError: serializeAxiosError },
 );
 
+export const activateEntity = createAsyncThunk(
+  'product/activate_entity',
+  async (id: string | number, thunkAPI) => {
+    const requestUrl = `${apiUrl}/${id}/activate`;
+    const result = await axios.patch<IProduct>(requestUrl);
+    thunkAPI.dispatch(getEntitiesWithVariants({}));
+    return result;
+  },
+  { serializeError: serializeAxiosError },
+);
+
 // slice
 
 export const ProductSlice = createEntitySlice({
@@ -93,7 +113,12 @@ export const ProductSlice = createEntitySlice({
         state.updateSuccess = true;
         state.entity = {};
       })
-      .addMatcher(isFulfilled(getEntities), (state, action) => {
+      .addCase(activateEntity.fulfilled, state => {
+        state.updating = false;
+        state.updateSuccess = true;
+        state.entity = {};
+      })
+      .addMatcher(isFulfilled(getEntities, getEntitiesWithVariants), (state, action) => {
         const { data, headers } = action.payload;
 
         return {
@@ -109,12 +134,12 @@ export const ProductSlice = createEntitySlice({
         state.updateSuccess = true;
         state.entity = action.payload.data;
       })
-      .addMatcher(isPending(getEntities, getEntity), state => {
+      .addMatcher(isPending(getEntities, getEntitiesWithVariants, getEntity), state => {
         state.errorMessage = null;
         state.updateSuccess = false;
         state.loading = true;
       })
-      .addMatcher(isPending(createEntity, updateEntity, partialUpdateEntity, deleteEntity), state => {
+      .addMatcher(isPending(createEntity, updateEntity, partialUpdateEntity, deleteEntity, activateEntity), state => {
         state.errorMessage = null;
         state.updateSuccess = false;
         state.updating = true;

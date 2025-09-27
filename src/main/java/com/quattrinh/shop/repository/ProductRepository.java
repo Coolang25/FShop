@@ -28,4 +28,13 @@ public interface ProductRepository
     default Page<Product> findAllWithEagerRelationships(Pageable pageable) {
         return this.fetchBagRelationships(this.findAll(pageable));
     }
+
+    @Query("SELECT p FROM Product p WHERE p.isActive = true")
+    List<Product> findAllActive();
+
+    @Query("SELECT p FROM Product p WHERE p.isActive = true")
+    Page<Product> findAllActive(Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE p.id = :id AND p.isActive = true")
+    Optional<Product> findOneActive(Long id);
 }

@@ -44,7 +44,6 @@ const CategoryManagement = () => {
   // Local state
   const [categories, setCategories] = useState<Category[]>([]);
   const [flatCategories, setFlatCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -66,12 +65,11 @@ const CategoryManagement = () => {
   }, []);
 
   useEffect(() => {
-    if (categoryState.entities && categoryState.entities.length > 0) {
+    if (categoryState.entities) {
       // Transform flat entities to hierarchical structure
       const hierarchicalCategories = buildCategoryHierarchy(categoryState.entities);
       setCategories(hierarchicalCategories);
       setFlatCategories(categoryState.entities);
-      setLoading(false);
     }
   }, [categoryState.entities]);
 
@@ -113,7 +111,6 @@ const CategoryManagement = () => {
   };
 
   const fetchCategories = () => {
-    setLoading(true);
     dispatch(getEntities({}));
   };
 
@@ -282,6 +279,22 @@ const CategoryManagement = () => {
         (category.children && category.children.some(child => child.name.toLowerCase().includes(searchTerm.toLowerCase()))),
     );
 
+    if (filteredParentCategories.length === 0) {
+      return (
+        <div className="text-center py-5">
+          <FaFolder size={48} className="text-muted mb-3" />
+          <h5 className="text-muted">No categories found</h5>
+          <p className="text-muted">{searchTerm ? 'No categories match your search criteria.' : 'No categories have been created yet.'}</p>
+          {!searchTerm && (
+            <Button variant="primary" onClick={() => setShowModal(true)}>
+              <FaPlus className="me-2" />
+              Create First Category
+            </Button>
+          )}
+        </div>
+      );
+    }
+
     return filteredParentCategories.map(category => (
       <Card key={category.id} className="mb-3 border-0 shadow-sm">
         <Card.Header className="bg-primary text-white d-flex justify-content-between align-items-center">
@@ -361,13 +374,14 @@ const CategoryManagement = () => {
 
   const filteredCategories = flatCategories.filter(category => category.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  if (loading) {
+  if (categoryState.loading) {
     return (
       <Container>
         <div className="text-center py-5">
-          <div className="spinner-border" role="status">
+          <Spinner animation="border" role="status">
             <span className="visually-hidden">Loading...</span>
-          </div>
+          </Spinner>
+          <div className="mt-2">Loading categories...</div>
         </div>
       </Container>
     );

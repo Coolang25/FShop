@@ -98,12 +98,17 @@ public class ProductVariantService {
     }
 
     /**
-     * Delete the productVariant by id.
+     * Delete the productVariant by id (soft delete).
      *
      * @param id the id of the entity.
      */
     public void delete(Long id) {
-        LOG.debug("Request to delete ProductVariant : {}", id);
-        productVariantRepository.deleteById(id);
+        LOG.debug("Request to soft delete ProductVariant : {}", id);
+        productVariantRepository
+            .findById(id)
+            .ifPresent(variant -> {
+                variant.setIsActive(false);
+                productVariantRepository.save(variant);
+            });
     }
 }

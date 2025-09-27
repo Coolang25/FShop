@@ -3,6 +3,8 @@ package com.quattrinh.shop.domain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -26,6 +28,10 @@ public class ProductAttribute implements Serializable {
     @Size(max = 100)
     @Column(name = "name", length = 100, nullable = false)
     private String name;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "attribute", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    private Set<ProductAttributeValue> values = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -53,6 +59,37 @@ public class ProductAttribute implements Serializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Set<ProductAttributeValue> getValues() {
+        return this.values;
+    }
+
+    public void setValues(Set<ProductAttributeValue> productAttributeValues) {
+        if (this.values != null) {
+            this.values.forEach(i -> i.setAttribute(null));
+        }
+        if (productAttributeValues != null) {
+            productAttributeValues.forEach(i -> i.setAttribute(this));
+        }
+        this.values = productAttributeValues;
+    }
+
+    public ProductAttribute values(Set<ProductAttributeValue> productAttributeValues) {
+        this.setValues(productAttributeValues);
+        return this;
+    }
+
+    public ProductAttribute addValues(ProductAttributeValue productAttributeValue) {
+        this.values.add(productAttributeValue);
+        productAttributeValue.setAttribute(this);
+        return this;
+    }
+
+    public ProductAttribute removeValues(ProductAttributeValue productAttributeValue) {
+        this.values.remove(productAttributeValue);
+        productAttributeValue.setAttribute(null);
+        return this;
     }
 
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here

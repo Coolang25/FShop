@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Container,
   Row,
@@ -15,30 +15,88 @@ import {
   Tabs,
   Tab,
   Pagination,
+  Spinner,
+  ProgressBar,
 } from 'react-bootstrap';
-import { FaPlus, FaEdit, FaTrash, FaEye, FaSearch, FaFilter, FaUpload, FaImage, FaBox, FaTag, FaCogs, FaList } from 'react-icons/fa';
+import {
+  FaPlus,
+  FaEdit,
+  FaTrash,
+  FaEye,
+  FaSearch,
+  FaFilter,
+  FaUpload,
+  FaImage,
+  FaBox,
+  FaTag,
+  FaCogs,
+  FaList,
+  FaFolder,
+  FaCheck,
+} from 'react-icons/fa';
+import { useAppDispatch, useAppSelector } from 'app/config/store';
+import {
+  getEntitiesSimplified as getProductAttributesSimplified,
+  AttributeWithValues,
+} from 'app/entities/product-attribute/product-attribute.reducer';
+import {
+  uploadImage,
+  setUploadProgress,
+  clearUploadProgress,
+  clearUploadedUrl,
+  reset as resetUpload,
+} from 'app/shared/reducers/upload.reducer';
+import {
+  getEntities as getProducts,
+  getEntitiesWithVariants as getProductsWithVariants,
+  createEntity as createProduct,
+  updateEntity as updateProduct,
+  deleteEntity as deleteProduct,
+  activateEntity as activateProduct,
+} from 'app/entities/product/product.reducer';
+import {
+  getEntities as getProductVariants,
+  createEntity as createProductVariant,
+  updateEntity as updateProductVariant,
+  deleteEntity as deleteProductVariant,
+} from 'app/entities/product-variant/product-variant.reducer';
+import { getEntities as getCategories } from 'app/entities/category/category.reducer';
 
 interface Product {
-  id: number;
-  name: string;
-  description: string;
-  basePrice: number;
-  imageUrl: string;
-  categories: string[];
-  variants: ProductVariant[];
-  isActive: boolean;
-  createdAt: string;
+  id?: number;
+  name?: string;
+  description?: string;
+  basePrice?: number;
+  imageUrl?: string;
+  categories?: { id: number; name: string }[];
+  variants?: ProductVariant[];
+  isActive?: boolean;
+  createdAt?: string;
 }
 
 interface ProductVariant {
-  id: number;
-  sku: string;
-  price: number;
-  attributes: { [key: string]: string };
+  id?: number;
+  sku?: string;
+  price?: number;
+  stock?: number;
+  imageUrl?: string;
+  isActive?: boolean;
+  product?: any;
+  attributeValues?: { [attributeName: string]: { id: number; value: string } };
 }
 
 const ProductManagement = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const dispatch = useAppDispatch();
+  const attributes = useAppSelector(state => state.productAttribute.entities);
+  const attributesLoading = useAppSelector(state => state.productAttribute.loading);
+  const products = useAppSelector(state => state.product.entities);
+  const productsLoading = useAppSelector(state => state.product.loading);
+  const productVariants = useAppSelector(state => state.productVariant.entities);
+  const productVariantsLoading = useAppSelector(state => state.productVariant.loading);
+  const categories = useAppSelector(state => state.category.entities);
+  const categoriesLoading = useAppSelector(state => state.category.loading);
+  const uploadState = useAppSelector(state => state.upload);
+
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -46,11 +104,27 @@ const ProductManagement = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+
+  // File input refs
+  const productFileInputRef = useRef<HTMLInputElement>(null);
+  const variantFileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState('products');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
-  const [availableAttributes, setAvailableAttributes] = useState<{ [key: string]: string[] }>({});
+  // Convert attributes from Redux to the format needed by the UI
+  const availableAttributes = React.useMemo(() => {
+    const result: { [key: string]: string[] } = {};
+    attributes.forEach(attr => {
+      if (attr.values && attr.values.length > 0) {
+        result[attr.name] = attr.values.map(v => v.value);
+      }
+    });
+    return result;
+  }, [attributes]);
+
+  // Products now come with variants from BE, no need to map
+  const productsWithVariants = products;
   const [showAttributeSelectionModal, setShowAttributeSelectionModal] = useState(false);
 
   // Pagination
@@ -63,7 +137,7 @@ const ProductManagement = () => {
     description: '',
     basePrice: '',
     imageUrl: '',
-    categories: [] as string[],
+    categories: [] as number[],
     isActive: true,
   });
 
@@ -71,88 +145,104 @@ const ProductManagement = () => {
   const [variantForm, setVariantForm] = useState({
     sku: '',
     price: '',
-    attributes: {} as { [key: string]: string },
+    stock: '',
+    imageUrl: '',
+    isActive: true,
+    attributeValues: {} as { [attributeName: string]: { id: number; value: string } },
   });
 
   useEffect(() => {
     fetchProducts();
     fetchAvailableAttributes();
+    fetchCategories();
+    // Fetch all variants
+    dispatch(getProductVariants({ page: 0, size: 1000, sort: 'id,asc' }));
   }, []);
 
+  // Update loading state based on Redux
+  useEffect(() => {
+    setLoading(productsLoading || attributesLoading || categoriesLoading);
+  }, [productsLoading, attributesLoading, categoriesLoading]);
+
   const fetchProducts = () => {
-    try {
-      // Mock data - replace with actual API call
-      const mockProducts: Product[] = [
-        {
-          id: 1,
-          name: "Premium Men's T-Shirt",
-          description: 'High-quality cotton t-shirt, comfortable and easy to wash',
-          basePrice: 250000,
-          imageUrl: '/content/images/product1.jpg',
-          categories: ["Men's Fashion", 'T-Shirts'],
-          variants: [
-            { id: 1, sku: 'TS001-S-RED', price: 250000, attributes: { Size: 'S', Color: 'Red' } },
-            { id: 2, sku: 'TS001-M-RED', price: 250000, attributes: { Size: 'M', Color: 'Red' } },
-            { id: 3, sku: 'TS001-L-BLUE', price: 250000, attributes: { Size: 'L', Color: 'Blue' } },
-            { id: 4, sku: 'TS001-XL-BLACK', price: 250000, attributes: { Size: 'XL', Color: 'Black' } },
-          ],
-          isActive: true,
-          createdAt: '2024-01-15',
-        },
-        {
-          id: 2,
-          name: "Women's Slim Fit Jeans",
-          description: 'Slim fit jeans for women, premium denim material',
-          basePrice: 450000,
-          imageUrl: '/content/images/product2.jpg',
-          categories: ["Women's Fashion", 'Jeans'],
-          variants: [
-            { id: 5, sku: 'WJ002-28-BLUE', price: 450000, attributes: { Size: '28', Color: 'Blue' } },
-            { id: 6, sku: 'WJ002-30-BLUE', price: 450000, attributes: { Size: '30', Color: 'Blue' } },
-            { id: 7, sku: 'WJ002-32-BLACK', price: 450000, attributes: { Size: '32', Color: 'Black' } },
-          ],
-          isActive: true,
-          createdAt: '2024-01-14',
-        },
-        {
-          id: 3,
-          name: 'Leather Handbag',
-          description: 'Genuine leather handbag, perfect for daily use',
-          basePrice: 800000,
-          imageUrl: '/content/images/product3.jpg',
-          categories: ['Accessories', 'Bags'],
-          variants: [
-            { id: 8, sku: 'LB003-BROWN', price: 800000, attributes: { Color: 'Brown', Material: 'Leather' } },
-            { id: 9, sku: 'LB003-BLACK', price: 800000, attributes: { Color: 'Black', Material: 'Leather' } },
-          ],
-          isActive: true,
-          createdAt: '2024-01-13',
-        },
-      ];
-      setProducts(mockProducts);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      setLoading(false);
-    }
+    // Use the new endpoint that includes variants
+    dispatch(getProductsWithVariants({ page: 0, size: 100, sort: 'id,asc' }));
   };
 
   const fetchAvailableAttributes = () => {
-    try {
-      // Mock data - replace with actual API call to Attribute Management
-      const mockAttributes = {
-        Size: ['S', 'M', 'L', 'XL', 'XXL', '28', '30', '32', '34', '36'],
-        Color: ['Red', 'Blue', 'Black', 'White', 'Green', 'Yellow', 'Brown', 'Gray', 'Pink', 'Purple'],
-        Material: ['Cotton', 'Polyester', 'Denim', 'Leather', 'Silk', 'Wool', 'Linen', 'Rayon'],
-        Brand: ['Nike', 'Adidas', 'Puma', 'Uniqlo', 'Zara', 'H&M', 'Gap', "Levi's"],
-        Style: ['Casual', 'Formal', 'Sport', 'Vintage', 'Modern', 'Classic'],
-        Gender: ['Men', 'Women', 'Unisex', 'Kids'],
-        Season: ['Spring', 'Summer', 'Fall', 'Winter', 'All Season'],
+    dispatch(getProductAttributesSimplified());
+  };
+
+  const fetchCategories = () => {
+    dispatch(getCategories({}));
+  };
+
+  // Build category hierarchy for display
+  const buildCategoryHierarchy = (categoriesData: any[]) => {
+    const categoryMap = new Map();
+    const rootCategories: any[] = [];
+
+    // First pass: create all categories
+    categoriesData.forEach(cat => {
+      const category = {
+        ...cat,
+        children: [],
       };
-      setAvailableAttributes(mockAttributes);
-    } catch (error) {
-      console.error('Error fetching attributes:', error);
-    }
+      categoryMap.set(cat.id, category);
+    });
+
+    // Second pass: build hierarchy
+    categoriesData.forEach(cat => {
+      const category = categoryMap.get(cat.id);
+      if (cat.parentId && categoryMap.has(cat.parentId)) {
+        categoryMap.get(cat.parentId).children.push(category);
+      } else {
+        rootCategories.push(category);
+      }
+    });
+
+    return rootCategories;
+  };
+
+  // Render category tree
+  const renderCategoryTree = (categoryList: any[], level = 0) => {
+    return categoryList.map(category => (
+      <div key={category.id} className="mb-1">
+        <Form.Check
+          type="checkbox"
+          id={`category-${category.id}`}
+          label={
+            <div className="d-flex align-items-center">
+              {level > 0 && (
+                <span className="me-2 text-muted" style={{ width: `${level * 16}px` }}>
+                  {level === 1 ? '└─' : '  └─'}
+                </span>
+              )}
+              {level === 0 ? <FaFolder className="me-2 text-primary" size={14} /> : <FaTag className="me-2 text-secondary" size={12} />}
+              <span className={level === 0 ? 'fw-bold text-primary' : 'text-dark'}>{category.name}</span>
+            </div>
+          }
+          checked={formData.categories.includes(category.id)}
+          onChange={e => {
+            if (e.target.checked) {
+              setFormData({
+                ...formData,
+                categories: [...formData.categories, category.id],
+              });
+            } else {
+              setFormData({
+                ...formData,
+                categories: formData.categories.filter(id => id !== category.id),
+              });
+            }
+          }}
+          className={`mb-1 ${level === 0 ? 'border-bottom pb-2 mb-2' : ''}`}
+        />
+        {category.children && category.children.length > 0 && (
+          <div className="ms-2">{renderCategoryTree(category.children, level + 1)}</div>
+        )}
+      </div>
+    ));
   };
 
   const handleAddProduct = () => {
@@ -171,21 +261,33 @@ const ProductManagement = () => {
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
     setFormData({
-      name: product.name,
-      description: product.description,
-      basePrice: product.basePrice.toString(),
-      imageUrl: product.imageUrl,
-      categories: product.categories,
-      isActive: product.isActive,
+      name: product.name || '',
+      description: product.description || '',
+      basePrice: product.basePrice?.toString() || '',
+      imageUrl: product.imageUrl || '',
+      categories: product.categories?.map(cat => cat.id) || [],
+      isActive: product.isActive || true,
     });
     setShowModal(true);
   };
 
   const handleSaveProduct = () => {
-    // Handle save logic here
-    console.log('Saving product:', formData);
+    const productData = {
+      name: formData.name,
+      description: formData.description,
+      basePrice: parseFloat(formData.basePrice),
+      imageUrl: formData.imageUrl,
+      categories: formData.categories.map(catId => ({ id: catId })),
+    };
+
+    if (editingProduct) {
+      dispatch(updateProduct({ ...productData, id: editingProduct.id }));
+    } else {
+      dispatch(createProduct(productData));
+    }
+
     setShowModal(false);
-    fetchProducts(); // Refresh the list
+    // Products will be refreshed automatically via Redux
   };
 
   const handleDeleteProduct = (product: Product) => {
@@ -193,12 +295,94 @@ const ProductManagement = () => {
     setShowDeleteModal(true);
   };
 
+  const handleActivateProduct = (product: Product) => {
+    if (product.id) {
+      dispatch(activateProduct(product.id));
+    }
+  };
+
   const confirmDelete = () => {
-    // Handle delete logic here
-    console.log('Deleting product:', productToDelete);
+    if (productToDelete?.id) {
+      dispatch(deleteProduct(productToDelete.id));
+    }
     setShowDeleteModal(false);
     setProductToDelete(null);
-    fetchProducts(); // Refresh the list
+    // Products will be refreshed automatically via Redux
+  };
+
+  // Image upload functions
+  const validateImageFile = (file: File): { valid: boolean; error?: string } => {
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      return { valid: false, error: 'Please select an image file' };
+    }
+
+    // Check file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      return { valid: false, error: 'File size must be less than 5MB' };
+    }
+
+    // Check file extension
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    if (!allowedExtensions.includes(fileExtension)) {
+      return { valid: false, error: 'Only JPG, PNG, GIF, and WebP files are allowed' };
+    }
+
+    return { valid: true };
+  };
+
+  const handleProductImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      alert(validation.error);
+      return;
+    }
+
+    // Upload file using Redux thunk
+    const result = await dispatch(uploadImage(file));
+
+    if (uploadImage.fulfilled.match(result)) {
+      setFormData({ ...formData, imageUrl: result.payload.fileUrl });
+    } else if (uploadImage.rejected.match(result)) {
+      alert('Failed to upload image. Please try again.');
+    }
+  };
+
+  const handleVariantImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      alert(validation.error);
+      return;
+    }
+
+    // Upload file using Redux thunk
+    const result = await dispatch(uploadImage(file));
+
+    if (uploadImage.fulfilled.match(result)) {
+      setVariantForm({ ...variantForm, imageUrl: result.payload.fileUrl });
+    } else if (uploadImage.rejected.match(result)) {
+      alert('Failed to upload image. Please try again.');
+    }
+  };
+
+  const handleRemoveProductImage = () => {
+    setFormData({ ...formData, imageUrl: '' });
+    dispatch(clearUploadedUrl());
+  };
+
+  const handleRemoveVariantImage = () => {
+    setVariantForm({ ...variantForm, imageUrl: '' });
+    dispatch(clearUploadedUrl());
   };
 
   // Variant management functions
@@ -207,8 +391,11 @@ const ProductManagement = () => {
     setEditingVariant(null);
     setVariantForm({
       sku: '',
-      price: product.basePrice.toString(),
-      attributes: {},
+      price: product.basePrice?.toString() || '0',
+      stock: '0',
+      imageUrl: '',
+      isActive: true,
+      attributeValues: {},
     });
     setShowVariantModal(true);
   };
@@ -217,34 +404,54 @@ const ProductManagement = () => {
     setSelectedProduct(product);
     setEditingVariant(variant);
     setVariantForm({
-      sku: variant.sku,
-      price: variant.price.toString(),
-      attributes: { ...variant.attributes },
+      sku: variant.sku || '',
+      price: variant.price?.toString() || '',
+      stock: variant.stock?.toString() || '',
+      imageUrl: variant.imageUrl || '',
+      isActive: variant.isActive ?? true,
+      attributeValues: { ...variant.attributeValues },
     });
     setShowVariantModal(true);
   };
 
   const handleSaveVariant = () => {
-    if (!selectedProduct) return;
+    if (!selectedProduct?.id) return;
 
-    // Handle save logic here
-    console.log('Saving variant:', variantForm, 'for product:', selectedProduct.name);
+    const variantData = {
+      sku: variantForm.sku,
+      price: parseFloat(variantForm.price),
+      stock: parseInt(variantForm.stock, 10),
+      imageUrl: variantForm.imageUrl,
+      isActive: variantForm.isActive,
+      product: { id: selectedProduct.id },
+    };
+
+    if (editingVariant?.id) {
+      dispatch(updateProductVariant({ ...variantData, id: editingVariant.id }));
+    } else {
+      dispatch(createProductVariant(variantData));
+    }
+
     setShowVariantModal(false);
     setSelectedProduct(null);
     setEditingVariant(null);
-    fetchProducts(); // Refresh the list
+    // Variants will be refreshed automatically via Redux
   };
 
   const handleDeleteVariant = (product: Product, variant: ProductVariant) => {
-    // Handle delete logic here
-    console.log('Deleting variant:', variant.sku, 'from product:', product.name);
-    fetchProducts(); // Refresh the list
+    if (variant.id) {
+      dispatch(deleteProductVariant(variant.id));
+    }
+    // Variants will be refreshed automatically via Redux
   };
 
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = productsWithVariants.filter(product => {
     const matchesSearch =
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) || product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || product.categories.includes(selectedCategory);
+      product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      !selectedCategory ||
+      product.categories?.some(cat => (typeof cat === 'string' ? cat === selectedCategory : cat.name === selectedCategory));
     return matchesSearch && matchesCategory;
   });
 
@@ -341,29 +548,36 @@ const ProductManagement = () => {
                         <div className="product-image">
                           <img
                             src={product.imageUrl || '/content/images/no-image.png'}
-                            alt={product.name}
+                            alt={product.name || 'Product'}
                             style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }}
                           />
                         </div>
                       </td>
                       <td>
                         <div>
-                          <div className="fw-medium">{product.name}</div>
-                          <small className="text-muted">{product.description.substring(0, 50)}...</small>
+                          <div className="d-flex align-items-center gap-2">
+                            <span className="fw-medium">{product.name || 'N/A'}</span>
+                            {product.isActive === false && (
+                              <Badge bg="secondary" className="text-uppercase">
+                                Inactive
+                              </Badge>
+                            )}
+                          </div>
+                          <small className="text-muted">{product.description?.substring(0, 50) || 'No description'}...</small>
                         </div>
                       </td>
                       <td>
                         <div>
-                          {product.categories.map((category, index) => (
+                          {product.categories?.map((category, index) => (
                             <Badge key={index} bg="secondary" className="me-1">
-                              {category}
+                              {category.name}
                             </Badge>
                           ))}
                         </div>
                       </td>
-                      <td>{formatCurrency(product.basePrice)}</td>
+                      <td>{formatCurrency(product.basePrice || 0)}</td>
                       <td>
-                        <Badge bg="info">{product.variants.length} variants</Badge>
+                        <Badge bg="info">{product.variants?.length || 0} variants</Badge>
                       </td>
                       <td>
                         <Badge bg={product.isActive ? 'success' : 'danger'}>{product.isActive ? 'Active' : 'Inactive'}</Badge>
@@ -384,9 +598,15 @@ const ProductManagement = () => {
                           <Button variant="outline-warning" size="sm" title="Edit" onClick={() => handleEditProduct(product)}>
                             <FaEdit />
                           </Button>
-                          <Button variant="outline-danger" size="sm" title="Delete" onClick={() => handleDeleteProduct(product)}>
-                            <FaTrash />
-                          </Button>
+                          {product.isActive === false ? (
+                            <Button variant="outline-success" size="sm" title="Activate" onClick={() => handleActivateProduct(product)}>
+                              <FaCheck />
+                            </Button>
+                          ) : (
+                            <Button variant="outline-danger" size="sm" title="Delete" onClick={() => handleDeleteProduct(product)}>
+                              <FaTrash />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -418,26 +638,30 @@ const ProductManagement = () => {
                       <th>SKU</th>
                       <th>Attributes</th>
                       <th>Price</th>
+                      <th>Stock</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedProduct.variants.map(variant => (
+                    {selectedProduct.variants?.map(variant => (
                       <tr key={variant.id}>
                         <td>
-                          <div className="fw-medium">{variant.sku}</div>
+                          <div className="fw-medium">{variant.sku || 'N/A'}</div>
                         </td>
                         <td>
                           <div>
-                            {Object.entries(variant.attributes).map(([key, value]) => (
+                            {Object.entries(variant.attributeValues || {}).map(([key, valueObj]) => (
                               <Badge key={key} bg="light" text="dark" className="me-1">
-                                {key}: {value}
+                                {key}: {valueObj.value}
                               </Badge>
                             ))}
                           </div>
                         </td>
                         <td>
-                          <span className="fw-medium">{variant.price.toLocaleString()} VND</span>
+                          <span className="fw-medium">{variant.price?.toLocaleString() || '0'} VND</span>
+                        </td>
+                        <td>
+                          <span className="fw-medium">{variant.stock || 0}</span>
                         </td>
                         <td>
                           <div className="d-flex gap-1">
@@ -544,18 +768,76 @@ const ProductManagement = () => {
                   </Col>
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>URL hình ảnh</Form.Label>
-                      <InputGroup>
-                        <Form.Control
-                          type="text"
-                          value={formData.imageUrl}
-                          onChange={e => setFormData({ ...formData, imageUrl: e.target.value })}
-                          placeholder="https://..."
-                        />
-                        <Button variant="outline-secondary">
-                          <FaUpload />
-                        </Button>
-                      </InputGroup>
+                      <Form.Label>Product Image</Form.Label>
+                      <div className="border rounded p-3 mb-3" style={{ borderStyle: 'dashed' }}>
+                        <div className="text-center">
+                          <input
+                            ref={productFileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={e => void handleProductImageUpload(e)}
+                            style={{ display: 'none' }}
+                          />
+
+                          {uploadState.loading ? (
+                            <div className="py-4">
+                              <Spinner animation="border" size="sm" className="me-2" />
+                              <span>Uploading image...</span>
+                              {uploadState.uploadProgress && (
+                                <div className="mt-2">
+                                  <ProgressBar
+                                    now={uploadState.uploadProgress.percentage}
+                                    label={`${uploadState.uploadProgress.percentage}%`}
+                                    variant="primary"
+                                  />
+                                  <small className="text-muted">
+                                    {Math.round(uploadState.uploadProgress.loaded / 1024)} KB /{' '}
+                                    {Math.round(uploadState.uploadProgress.total / 1024)} KB
+                                  </small>
+                                </div>
+                              )}
+                            </div>
+                          ) : uploadState.uploadedUrl || formData.imageUrl ? (
+                            <div className="py-2">
+                              <img
+                                src={uploadState.uploadedUrl || formData.imageUrl}
+                                alt="Preview"
+                                className="rounded border mb-2"
+                                style={{ width: '120px', height: '120px', objectFit: 'cover' }}
+                                onError={e => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                              <div>
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={() => productFileInputRef.current?.click()}
+                                  className="me-2"
+                                >
+                                  <FaUpload className="me-1" />
+                                  Change Image
+                                </Button>
+                                <Button variant="outline-danger" size="sm" onClick={handleRemoveProductImage}>
+                                  <FaTrash className="me-1" />
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="py-4">
+                              <FaImage size={48} className="text-muted mb-3" />
+                              <div>
+                                <Button variant="outline-primary" onClick={() => productFileInputRef.current?.click()}>
+                                  <FaUpload className="me-2" />
+                                  Upload Image
+                                </Button>
+                              </div>
+                              <small className="text-muted d-block mt-2">Click to select an image file (JPG, PNG, GIF - Max 5MB)</small>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </Form.Group>
                   </Col>
                 </Row>
@@ -563,27 +845,30 @@ const ProductManagement = () => {
 
               <Col md={4}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Image xem trước</Form.Label>
-                  <div className="border rounded p-3 text-center">
-                    {formData.imageUrl ? (
-                      <img src={formData.imageUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px' }} />
+                  <Form.Label>
+                    <FaTag className="me-2" />
+                    Categories
+                  </Form.Label>
+                  <div className="border rounded p-3 bg-light" style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                    {categories.length === 0 ? (
+                      <div className="text-muted text-center py-3">
+                        <FaTag size={32} className="mb-2" />
+                        <div>No categories available</div>
+                        <small>Create categories first to assign to products</small>
+                      </div>
                     ) : (
-                      <div className="text-muted">
-                        <FaImage size={48} />
-                        <div>Chưa có hình ảnh</div>
+                      <div>
+                        {renderCategoryTree(buildCategoryHierarchy(categories))}
+                        {formData.categories.length > 0 && (
+                          <div className="mt-3 pt-2 border-top">
+                            <small className="text-muted">
+                              <strong>Selected:</strong> {formData.categories.length} category(ies)
+                            </small>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="isActive"
-                    label="Sản phẩm hoạt động"
-                    checked={formData.isActive}
-                    onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
-                  />
                 </Form.Group>
               </Col>
             </Row>
@@ -610,7 +895,7 @@ const ProductManagement = () => {
         <Modal.Body>
           <Form>
             <Row>
-              <Col md={6}>
+              <Col md={4}>
                 <Form.Group className="mb-3">
                   <Form.Label>SKU *</Form.Label>
                   <Form.Control
@@ -621,7 +906,7 @@ const ProductManagement = () => {
                   />
                 </Form.Group>
               </Col>
-              <Col md={6}>
+              <Col md={4}>
                 <Form.Group className="mb-3">
                   <Form.Label>Price *</Form.Label>
                   <Form.Control
@@ -632,7 +917,97 @@ const ProductManagement = () => {
                   />
                 </Form.Group>
               </Col>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Stock *</Form.Label>
+                  <Form.Control
+                    type="number"
+                    value={variantForm.stock}
+                    onChange={e => setVariantForm({ ...variantForm, stock: e.target.value })}
+                    placeholder="Enter stock"
+                    min="0"
+                  />
+                </Form.Group>
+              </Col>
             </Row>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Variant Image</Form.Label>
+              <div className="border rounded p-3 mb-3" style={{ borderStyle: 'dashed' }}>
+                <div className="text-center">
+                  <input
+                    ref={variantFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={e => void handleVariantImageUpload(e)}
+                    style={{ display: 'none' }}
+                  />
+
+                  {uploadState.loading ? (
+                    <div className="py-4">
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      <span>Uploading image...</span>
+                      {uploadState.uploadProgress && (
+                        <div className="mt-2">
+                          <ProgressBar
+                            now={uploadState.uploadProgress.percentage}
+                            label={`${uploadState.uploadProgress.percentage}%`}
+                            variant="primary"
+                          />
+                          <small className="text-muted">
+                            {Math.round(uploadState.uploadProgress.loaded / 1024)} KB /{' '}
+                            {Math.round(uploadState.uploadProgress.total / 1024)} KB
+                          </small>
+                        </div>
+                      )}
+                    </div>
+                  ) : uploadState.uploadedUrl || variantForm.imageUrl ? (
+                    <div className="py-2">
+                      <img
+                        src={uploadState.uploadedUrl || variantForm.imageUrl}
+                        alt="Preview"
+                        className="rounded border mb-2"
+                        style={{ width: '120px', height: '120px', objectFit: 'cover' }}
+                        onError={e => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                      <div>
+                        <Button variant="outline-primary" size="sm" onClick={() => variantFileInputRef.current?.click()} className="me-2">
+                          <FaUpload className="me-1" />
+                          Change Image
+                        </Button>
+                        <Button variant="outline-danger" size="sm" onClick={handleRemoveVariantImage}>
+                          <FaTrash className="me-1" />
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-4">
+                      <FaImage size={48} className="text-muted mb-3" />
+                      <div>
+                        <Button variant="outline-primary" onClick={() => variantFileInputRef.current?.click()}>
+                          <FaUpload className="me-2" />
+                          Upload Image
+                        </Button>
+                      </div>
+                      <small className="text-muted d-block mt-2">Click to select an image file (JPG, PNG, GIF - Max 5MB)</small>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Check
+                type="switch"
+                id="variantIsActive"
+                label="Variant is active"
+                checked={variantForm.isActive}
+                onChange={e => setVariantForm({ ...variantForm, isActive: e.target.checked })}
+              />
+            </Form.Group>
 
             <Form.Group className="mb-3">
               <div className="d-flex justify-content-between align-items-center mb-2">
@@ -641,7 +1016,7 @@ const ProductManagement = () => {
                   variant="outline-primary"
                   size="sm"
                   onClick={() => {
-                    const availableKeys = Object.keys(availableAttributes).filter(key => !variantForm.attributes[key]);
+                    const availableKeys = Object.keys(availableAttributes).filter(key => !variantForm.attributeValues[key]);
                     if (availableKeys.length === 0) {
                       alert('All available attributes have been added!');
                       return;
@@ -654,7 +1029,7 @@ const ProductManagement = () => {
                 </Button>
               </div>
               <div className="border rounded p-3">
-                {Object.keys(variantForm.attributes).length === 0 ? (
+                {Object.keys(variantForm.attributeValues).length === 0 ? (
                   <div className="text-center text-muted py-3">
                     <FaTag className="mb-2" />
                     <p className="mb-0">No attributes selected. Click &quot;Add Attribute&quot; to select from available attributes.</p>
@@ -662,19 +1037,26 @@ const ProductManagement = () => {
                   </div>
                 ) : (
                   <div className="row g-2">
-                    {Object.entries(variantForm.attributes).map(([key, value]) => (
+                    {Object.entries(variantForm.attributeValues).map(([key, valueObj]) => (
                       <div key={key} className="col-md-6">
                         <div className="d-flex gap-2">
                           <div className="flex-grow-1">
                             <Form.Label className="small">{key}</Form.Label>
                             <Form.Select
-                              value={value}
-                              onChange={e =>
+                              value={valueObj?.value || ''}
+                              onChange={e => {
+                                const selectedValue = e.target.value;
+                                const attribute = attributes.find(attr => attr.name === key);
+                                const attributeValue = attribute?.values.find(val => val.value === selectedValue);
+
                                 setVariantForm({
                                   ...variantForm,
-                                  attributes: { ...variantForm.attributes, [key]: e.target.value },
-                                })
-                              }
+                                  attributeValues: {
+                                    ...variantForm.attributeValues,
+                                    [key]: attributeValue ? { id: attributeValue.id, value: attributeValue.value } : { id: 0, value: '' },
+                                  },
+                                });
+                              }}
                             >
                               <option value="">Select {key}</option>
                               {availableAttributes[key]?.map(option => (
@@ -689,11 +1071,11 @@ const ProductManagement = () => {
                               variant="outline-danger"
                               size="sm"
                               onClick={() => {
-                                const newAttributes = { ...variantForm.attributes };
-                                delete newAttributes[key];
+                                const newAttributeValues = { ...variantForm.attributeValues };
+                                delete newAttributeValues[key];
                                 setVariantForm({
                                   ...variantForm,
-                                  attributes: newAttributes,
+                                  attributeValues: newAttributeValues,
                                 });
                               }}
                             >
@@ -728,7 +1110,7 @@ const ProductManagement = () => {
           <p>Choose an attribute to add to this variant:</p>
           <div className="row g-2">
             {Object.keys(availableAttributes)
-              .filter(key => !variantForm.attributes[key])
+              .filter(key => !variantForm.attributeValues[key])
               .map(attributeKey => (
                 <div key={attributeKey} className="col-md-6">
                   <Button
@@ -737,7 +1119,7 @@ const ProductManagement = () => {
                     onClick={() => {
                       setVariantForm({
                         ...variantForm,
-                        attributes: { ...variantForm.attributes, [attributeKey]: '' },
+                        attributeValues: { ...variantForm.attributeValues, [attributeKey]: { id: 0, value: '' } },
                       });
                       setShowAttributeSelectionModal(false);
                     }}
@@ -749,7 +1131,7 @@ const ProductManagement = () => {
                 </div>
               ))}
           </div>
-          {Object.keys(availableAttributes).filter(key => !variantForm.attributes[key]).length === 0 && (
+          {Object.keys(availableAttributes).filter(key => !variantForm.attributeValues[key]).length === 0 && (
             <div className="text-center py-3">
               <p className="text-muted">All available attributes have been added!</p>
             </div>

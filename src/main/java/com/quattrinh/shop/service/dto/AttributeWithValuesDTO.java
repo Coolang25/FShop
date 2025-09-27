@@ -2,15 +2,13 @@ package com.quattrinh.shop.service.dto;
 
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 /**
- * A DTO for the {@link com.quattrinh.shop.domain.ProductAttribute} entity.
+ * A simplified DTO for ProductAttribute with values in the format requested by frontend.
  */
-@SuppressWarnings("common-java:DuplicatedBlocks")
-public class ProductAttributeDTO implements Serializable {
+public class AttributeWithValuesDTO implements Serializable {
 
     private Long id;
 
@@ -18,7 +16,7 @@ public class ProductAttributeDTO implements Serializable {
     @Size(max = 100)
     private String name;
 
-    private Set<ProductAttributeValueDTO> values = new HashSet<>();
+    private List<AttributeValueDTO> values;
 
     public Long getId() {
         return id;
@@ -36,11 +34,11 @@ public class ProductAttributeDTO implements Serializable {
         this.name = name;
     }
 
-    public Set<ProductAttributeValueDTO> getValues() {
+    public List<AttributeValueDTO> getValues() {
         return values;
     }
 
-    public void setValues(Set<ProductAttributeValueDTO> values) {
+    public void setValues(List<AttributeValueDTO> values) {
         this.values = values;
     }
 
@@ -49,15 +47,15 @@ public class ProductAttributeDTO implements Serializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ProductAttributeDTO)) {
+        if (!(o instanceof AttributeWithValuesDTO)) {
             return false;
         }
 
-        ProductAttributeDTO productAttributeDTO = (ProductAttributeDTO) o;
+        AttributeWithValuesDTO that = (AttributeWithValuesDTO) o;
         if (this.id == null) {
             return false;
         }
-        return Objects.equals(this.id, productAttributeDTO.id);
+        return Objects.equals(this.id, that.id);
     }
 
     @Override
@@ -65,12 +63,8 @@ public class ProductAttributeDTO implements Serializable {
         return Objects.hash(this.id);
     }
 
-    // prettier-ignore
     @Override
     public String toString() {
-        return "ProductAttributeDTO{" +
-            "id=" + getId() +
-            ", name='" + getName() + "'" +
-            "}";
+        return "AttributeWithValuesDTO{" + "id=" + getId() + ", name='" + getName() + "'" + ", values=" + getValues() + "}";
     }
 }

@@ -12,6 +12,7 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring")
 public interface ProductVariantMapper extends EntityMapper<ProductVariantDTO, ProductVariant> {
     @Mapping(target = "product", source = "product", qualifiedByName = "productName")
+    @Mapping(target = "isActive", source = "isActive")
     ProductVariantDTO toDto(ProductVariant s);
 
     @Named("productName")

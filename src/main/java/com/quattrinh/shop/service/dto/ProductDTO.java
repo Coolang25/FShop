@@ -1,6 +1,5 @@
 package com.quattrinh.shop.service.dto;
 
-import jakarta.persistence.Lob;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -27,6 +26,10 @@ public class ProductDTO implements Serializable {
     private String imageUrl;
 
     private Set<CategoryDTO> categories = new HashSet<>();
+
+    private Set<ProductVariantDTO> variants = new HashSet<>();
+
+    private Boolean isActive = true;
 
     public Long getId() {
         return id;
@@ -76,6 +79,22 @@ public class ProductDTO implements Serializable {
         this.categories = categories;
     }
 
+    public Set<ProductVariantDTO> getVariants() {
+        return variants;
+    }
+
+    public void setVariants(Set<ProductVariantDTO> variants) {
+        this.variants = variants;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -107,6 +126,8 @@ public class ProductDTO implements Serializable {
             ", basePrice=" + getBasePrice() +
             ", imageUrl='" + getImageUrl() + "'" +
             ", categories=" + getCategories() +
+            ", variants=" + getVariants() +
+            ", isActive=" + getIsActive() +
             "}";
     }
 }

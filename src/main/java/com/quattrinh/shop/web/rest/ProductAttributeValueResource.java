@@ -4,7 +4,9 @@ import com.quattrinh.shop.repository.ProductAttributeValueRepository;
 import com.quattrinh.shop.service.ProductAttributeValueQueryService;
 import com.quattrinh.shop.service.ProductAttributeValueService;
 import com.quattrinh.shop.service.criteria.ProductAttributeValueCriteria;
+import com.quattrinh.shop.service.dto.ProductAttributeDTO;
 import com.quattrinh.shop.service.dto.ProductAttributeValueDTO;
+import com.quattrinh.shop.service.dto.ProductAttributeValueRequestDTO;
 import com.quattrinh.shop.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -59,19 +61,22 @@ public class ProductAttributeValueResource {
     /**
      * {@code POST  /product-attribute-values} : Create a new productAttributeValue.
      *
-     * @param productAttributeValueDTO the productAttributeValueDTO to create.
+     * @param requestDTO the ProductAttributeValueRequestDTO to create.
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new productAttributeValueDTO, or with status {@code 400 (Bad Request)} if the productAttributeValue has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("")
     public ResponseEntity<ProductAttributeValueDTO> createProductAttributeValue(
-        @Valid @RequestBody ProductAttributeValueDTO productAttributeValueDTO
+        @Valid @RequestBody ProductAttributeValueRequestDTO requestDTO
     ) throws URISyntaxException {
-        LOG.debug("REST request to save ProductAttributeValue : {}", productAttributeValueDTO);
-        if (productAttributeValueDTO.getId() != null) {
-            throw new BadRequestAlertException("A new productAttributeValue cannot already have an ID", ENTITY_NAME, "idexists");
-        }
-        productAttributeValueDTO = productAttributeValueService.save(productAttributeValueDTO);
+        LOG.debug("REST request to save ProductAttributeValue : {}", requestDTO);
+
+        // Convert request DTO to full DTO
+        ProductAttributeValueDTO productAttributeValueDTO = new ProductAttributeValueDTO();
+        productAttributeValueDTO.setValue(requestDTO.getValue());
+        productAttributeValueDTO.setAttributeId(requestDTO.getAttributeId());
+
+        productAttributeValueDTO = productAttributeValueService.save(requestDTO);
         return ResponseEntity.created(new URI("/api/product-attribute-values/" + productAttributeValueDTO.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, productAttributeValueDTO.getId().toString()))
             .body(productAttributeValueDTO);
@@ -81,7 +86,7 @@ public class ProductAttributeValueResource {
      * {@code PUT  /product-attribute-values/:id} : Updates an existing productAttributeValue.
      *
      * @param id the id of the productAttributeValueDTO to save.
-     * @param productAttributeValueDTO the productAttributeValueDTO to update.
+     * @param requestDTO the ProductAttributeValueRequestDTO to update.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated productAttributeValueDTO,
      * or with status {@code 400 (Bad Request)} if the productAttributeValueDTO is not valid,
      * or with status {@code 500 (Internal Server Error)} if the productAttributeValueDTO couldn't be updated.
@@ -90,21 +95,15 @@ public class ProductAttributeValueResource {
     @PutMapping("/{id}")
     public ResponseEntity<ProductAttributeValueDTO> updateProductAttributeValue(
         @PathVariable(value = "id", required = false) final Long id,
-        @Valid @RequestBody ProductAttributeValueDTO productAttributeValueDTO
+        @Valid @RequestBody ProductAttributeValueRequestDTO requestDTO
     ) throws URISyntaxException {
-        LOG.debug("REST request to update ProductAttributeValue : {}, {}", id, productAttributeValueDTO);
-        if (productAttributeValueDTO.getId() == null) {
-            throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
-        }
-        if (!Objects.equals(id, productAttributeValueDTO.getId())) {
-            throw new BadRequestAlertException("Invalid ID", ENTITY_NAME, "idinvalid");
-        }
+        LOG.debug("REST request to update ProductAttributeValue : {}, {}", id, requestDTO);
 
         if (!productAttributeValueRepository.existsById(id)) {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
-        productAttributeValueDTO = productAttributeValueService.update(productAttributeValueDTO);
+        ProductAttributeValueDTO productAttributeValueDTO = productAttributeValueService.update(id, requestDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, productAttributeValueDTO.getId().toString()))
             .body(productAttributeValueDTO);

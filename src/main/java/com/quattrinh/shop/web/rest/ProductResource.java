@@ -172,6 +172,20 @@ public class ProductResource {
     }
 
     /**
+     * {@code GET  /products/with-variants} : get all the products with their variants.
+     *
+     * @param pageable the pagination information.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of products with variants in body.
+     */
+    @GetMapping("/with-variants")
+    public ResponseEntity<List<ProductDTO>> getAllProductsWithVariants(@org.springdoc.core.annotations.ParameterObject Pageable pageable) {
+        LOG.debug("REST request to get Products with variants");
+        Page<ProductDTO> page = productService.findAllWithEagerRelationships(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    /**
      * {@code GET  /products/:id} : get the "id" product.
      *
      * @param id the id of the productDTO to retrieve.
@@ -197,5 +211,20 @@ public class ProductResource {
         return ResponseEntity.noContent()
             .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))
             .build();
+    }
+
+    /**
+     * {@code PATCH  /products/:id/activate} : activate the "id" product.
+     *
+     * @param id the id of the productDTO to activate.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated productDTO.
+     */
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<ProductDTO> activateProduct(@PathVariable("id") Long id) {
+        LOG.debug("REST request to activate Product : {}", id);
+        ProductDTO result = productService.activate(id);
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .body(result);
     }
 }

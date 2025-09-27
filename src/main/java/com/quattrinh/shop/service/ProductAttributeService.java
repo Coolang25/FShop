@@ -87,6 +87,34 @@ public class ProductAttributeService {
     }
 
     /**
+     * Get one productAttribute by id with values.
+     *
+     * @param id the id of the entity.
+     * @return the entity with values.
+     */
+    @Transactional(readOnly = true)
+    public Optional<ProductAttributeDTO> findOneWithValues(Long id) {
+        LOG.debug("Request to get ProductAttribute with values : {}", id);
+        ProductAttribute productAttribute = productAttributeRepository.findByIdWithValues(id);
+        return productAttribute != null ? Optional.of(productAttributeMapper.toDto(productAttribute)) : Optional.empty();
+    }
+
+    /**
+     * Get all productAttributes with values.
+     *
+     * @return the list of entities with values.
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<ProductAttributeDTO> findAllWithValues() {
+        LOG.debug("Request to get all ProductAttributes with values");
+        return productAttributeRepository
+            .findAllWithValues()
+            .stream()
+            .map(productAttributeMapper::toDto)
+            .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
      * Delete the productAttribute by id.
      *
      * @param id the id of the entity.

@@ -98,12 +98,35 @@ public class ProductService {
     }
 
     /**
-     * Delete the product by id.
+     * Delete the product by id (soft delete).
      *
      * @param id the id of the entity.
      */
     public void delete(Long id) {
-        LOG.debug("Request to delete Product : {}", id);
-        productRepository.deleteById(id);
+        LOG.debug("Request to soft delete Product : {}", id);
+        productRepository
+            .findById(id)
+            .ifPresent(product -> {
+                product.setIsActive(false);
+                productRepository.save(product);
+            });
+    }
+
+    /**
+     * Activate the "id" product.
+     *
+     * @param id the id of the entity.
+     * @return the activated productDTO.
+     */
+    public ProductDTO activate(Long id) {
+        LOG.debug("Request to activate Product : {}", id);
+        return productRepository
+            .findById(id)
+            .map(product -> {
+                product.setIsActive(true);
+                Product savedProduct = productRepository.save(product);
+                return productMapper.toDto(savedProduct);
+            })
+            .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
     }
 }

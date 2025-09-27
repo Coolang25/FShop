@@ -11,7 +11,7 @@ import org.mapstruct.*;
  */
 @Mapper(componentModel = "spring")
 public interface ProductAttributeValueMapper extends EntityMapper<ProductAttributeValueDTO, ProductAttributeValue> {
-    @Mapping(target = "attribute", source = "attribute", qualifiedByName = "productAttributeName")
+    @Mapping(target = "attributeId", source = "attribute.id")
     ProductAttributeValueDTO toDto(ProductAttributeValue s);
 
     @Named("productAttributeName")

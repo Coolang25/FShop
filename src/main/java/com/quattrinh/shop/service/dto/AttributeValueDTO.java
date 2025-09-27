@@ -5,18 +5,15 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * A DTO for the {@link com.quattrinh.shop.domain.ProductAttributeValue} entity.
+ * A simplified DTO for ProductAttributeValue.
  */
-@SuppressWarnings("common-java:DuplicatedBlocks")
-public class ProductAttributeValueDTO implements Serializable {
+public class AttributeValueDTO implements Serializable {
 
     private Long id;
 
     @NotNull
     @Size(max = 100)
     private String value;
-
-    private Long attributeId;
 
     public Long getId() {
         return id;
@@ -39,15 +36,15 @@ public class ProductAttributeValueDTO implements Serializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ProductAttributeValueDTO)) {
+        if (!(o instanceof AttributeValueDTO)) {
             return false;
         }
 
-        ProductAttributeValueDTO productAttributeValueDTO = (ProductAttributeValueDTO) o;
+        AttributeValueDTO that = (AttributeValueDTO) o;
         if (this.id == null) {
             return false;
         }
-        return Objects.equals(this.id, productAttributeValueDTO.id);
+        return Objects.equals(this.id, that.id);
     }
 
     @Override
@@ -55,21 +52,8 @@ public class ProductAttributeValueDTO implements Serializable {
         return Objects.hash(this.id);
     }
 
-    // prettier-ignore
     @Override
     public String toString() {
-        return "ProductAttributeValueDTO{" +
-            "id=" + getId() +
-            ", value='" + getValue() + "'" +
-            ", attributeId=" + getAttributeId() +
-            "}";
-    }
-
-    public Long getAttributeId() {
-        return attributeId;
-    }
-
-    public void setAttributeId(Long attributeId) {
-        this.attributeId = attributeId;
+        return "AttributeValueDTO{" + "id=" + getId() + ", value='" + getValue() + "'" + "}";
     }
 }

@@ -40,6 +40,9 @@ public class Product implements Serializable {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "rel_products__categories",
@@ -49,6 +52,11 @@ public class Product implements Serializable {
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @JsonIgnoreProperties(value = { "products" }, allowSetters = true)
     private Set<Category> categories = new HashSet<>();
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @JsonIgnoreProperties(value = { "product" }, allowSetters = true)
+    private Set<ProductVariant> variants = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -140,6 +148,44 @@ public class Product implements Serializable {
         return this;
     }
 
+    public Set<ProductVariant> getVariants() {
+        return this.variants;
+    }
+
+    public void setVariants(Set<ProductVariant> variants) {
+        this.variants = variants;
+    }
+
+    public Product variants(Set<ProductVariant> variants) {
+        this.setVariants(variants);
+        return this;
+    }
+
+    public Product addVariants(ProductVariant variant) {
+        this.variants.add(variant);
+        variant.setProduct(this);
+        return this;
+    }
+
+    public Product removeVariants(ProductVariant variant) {
+        this.variants.remove(variant);
+        variant.setProduct(null);
+        return this;
+    }
+
+    public Boolean getIsActive() {
+        return this.isActive;
+    }
+
+    public Product isActive(Boolean isActive) {
+        this.setIsActive(isActive);
+        return this;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @Override
@@ -168,6 +214,7 @@ public class Product implements Serializable {
             ", description='" + getDescription() + "'" +
             ", basePrice=" + getBasePrice() +
             ", imageUrl='" + getImageUrl() + "'" +
+            ", isActive=" + getIsActive() +
             "}";
     }
 }

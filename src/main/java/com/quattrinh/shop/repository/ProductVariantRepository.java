@@ -37,4 +37,13 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
 
     @Query("select productVariant from ProductVariant productVariant left join fetch productVariant.product where productVariant.id =:id")
     Optional<ProductVariant> findOneWithToOneRelationships(@Param("id") Long id);
+
+    @Query("SELECT pv FROM ProductVariant pv WHERE pv.isActive = true")
+    List<ProductVariant> findAllActive();
+
+    @Query("SELECT pv FROM ProductVariant pv WHERE pv.isActive = true")
+    Page<ProductVariant> findAllActive(Pageable pageable);
+
+    @Query("SELECT pv FROM ProductVariant pv WHERE pv.id = :id AND pv.isActive = true")
+    Optional<ProductVariant> findOneActive(Long id);
 }

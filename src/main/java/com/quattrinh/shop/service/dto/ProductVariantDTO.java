@@ -24,6 +24,10 @@ public class ProductVariantDTO implements Serializable {
     @Min(value = 0)
     private Integer stock;
 
+    private String imageUrl;
+
+    private Boolean isActive = true;
+
     private ProductDTO product;
 
     public Long getId() {
@@ -56,6 +60,22 @@ public class ProductVariantDTO implements Serializable {
 
     public void setStock(Integer stock) {
         this.stock = stock;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public ProductDTO getProduct() {
@@ -95,6 +115,8 @@ public class ProductVariantDTO implements Serializable {
             ", sku='" + getSku() + "'" +
             ", price=" + getPrice() +
             ", stock=" + getStock() +
+            ", imageUrl='" + getImageUrl() + "'" +
+            ", isActive=" + getIsActive() +
             ", product=" + getProduct() +
             "}";
     }

@@ -1,201 +1,210 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Form, Modal, Badge, InputGroup, Alert, Tabs, Tab, Pagination } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, Modal, InputGroup, Alert } from 'react-bootstrap';
 import { FaPlus, FaEdit, FaTrash, FaSearch, FaCogs, FaTag, FaList, FaSave } from 'react-icons/fa';
-
-interface ProductAttribute {
-  id: number;
-  name: string;
-  values: ProductAttributeValue[];
-  isActive: boolean;
-  createdAt: string;
-}
-
-interface ProductAttributeValue {
-  id: number;
-  value: string;
-  attributeId: number;
-  isActive: boolean;
-  createdAt: string;
-}
+import { useAppDispatch, useAppSelector } from 'app/config/store';
+import {
+  getEntitiesSimplified as getProductAttributesSimplified,
+  createEntity as createProductAttribute,
+  updateEntity as updateProductAttribute,
+  createAttributeValue,
+  updateAttributeValue,
+  deleteAttributeValue,
+  AttributeWithValues,
+  AttributeValue,
+} from 'app/entities/product-attribute/product-attribute.reducer';
 
 const AttributeManagement = () => {
-  const [attributes, setAttributes] = useState<ProductAttribute[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('attributes');
+  const dispatch = useAppDispatch();
+
+  // Redux state
+  const productAttributeList = useAppSelector(state => state.productAttribute.entities);
+  const loading = useAppSelector(state => state.productAttribute.loading);
+  const updating = useAppSelector(state => state.productAttribute.updating);
+  const updateSuccess = useAppSelector(state => state.productAttribute.updateSuccess);
+  const errorMessage = useAppSelector(state => state.productAttribute.errorMessage);
+
+  // Convert to simplified format
+  const attributes: AttributeWithValues[] = productAttributeList as AttributeWithValues[];
+
+  // Local state
   const [showAttributeModal, setShowAttributeModal] = useState(false);
   const [showValueModal, setShowValueModal] = useState(false);
-  const [showAttributeSelectionModal, setShowAttributeSelectionModal] = useState(false);
-  const [editingAttribute, setEditingAttribute] = useState<ProductAttribute | null>(null);
-  const [editingValue, setEditingValue] = useState<ProductAttributeValue | null>(null);
-  const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null);
+  const [editingAttribute, setEditingAttribute] = useState<AttributeWithValues | null>(null);
+  const [editingValue, setEditingValue] = useState<AttributeValue | null>(null);
+  const [selectedAttribute, setSelectedAttribute] = useState<AttributeWithValues | null>(null);
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<any>(null);
-  const [deleteType, setDeleteType] = useState<'attribute' | 'value'>('attribute');
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [savingValue, setSavingValue] = useState(false);
 
   // Form states
   const [attributeForm, setAttributeForm] = useState({
     name: '',
-    isActive: true,
   });
 
   const [valueForm, setValueForm] = useState({
     value: '',
-    isActive: true,
+    attributeId: null as number | null,
   });
 
+  // Load data on mount
   useEffect(() => {
-    fetchAttributes();
+    dispatch(getProductAttributesSimplified());
   }, []);
 
-  const fetchAttributes = () => {
-    try {
-      // Mock data - replace with actual API call
-      const mockAttributes: ProductAttribute[] = [
-        {
-          id: 1,
-          name: 'Size',
-          isActive: true,
-          createdAt: '2024-01-15',
-          values: [
-            { id: 1, value: 'S', attributeId: 1, isActive: true, createdAt: '2024-01-15' },
-            { id: 2, value: 'M', attributeId: 1, isActive: true, createdAt: '2024-01-15' },
-            { id: 3, value: 'L', attributeId: 1, isActive: true, createdAt: '2024-01-15' },
-            { id: 4, value: 'XL', attributeId: 1, isActive: true, createdAt: '2024-01-15' },
-            { id: 5, value: 'XXL', attributeId: 1, isActive: true, createdAt: '2024-01-15' },
-          ],
-        },
-        {
-          id: 2,
-          name: 'Color',
-          isActive: true,
-          createdAt: '2024-01-15',
-          values: [
-            { id: 6, value: 'Đỏ', attributeId: 2, isActive: true, createdAt: '2024-01-15' },
-            { id: 7, value: 'Xanh', attributeId: 2, isActive: true, createdAt: '2024-01-15' },
-            { id: 8, value: 'Đen', attributeId: 2, isActive: true, createdAt: '2024-01-15' },
-            { id: 9, value: 'Trắng', attributeId: 2, isActive: true, createdAt: '2024-01-15' },
-            { id: 10, value: 'Vàng', attributeId: 2, isActive: true, createdAt: '2024-01-15' },
-          ],
-        },
-        {
-          id: 3,
-          name: 'Material',
-          isActive: true,
-          createdAt: '2024-01-15',
-          values: [
-            { id: 11, value: 'Cotton', attributeId: 3, isActive: true, createdAt: '2024-01-15' },
-            { id: 12, value: 'Polyester', attributeId: 3, isActive: true, createdAt: '2024-01-15' },
-            { id: 13, value: 'Denim', attributeId: 3, isActive: true, createdAt: '2024-01-15' },
-            { id: 14, value: 'Silk', attributeId: 3, isActive: true, createdAt: '2024-01-15' },
-          ],
-        },
-      ];
-
-      setAttributes(mockAttributes);
-    } catch (error) {
-      console.error('Error fetching attributes:', error);
-    } finally {
-      setLoading(false);
+  // Auto-select first attribute when attributes change
+  useEffect(() => {
+    if (attributes.length > 0) {
+      // If no attribute selected, select the first one
+      if (!selectedAttribute) {
+        setSelectedAttribute(attributes[0]);
+      } else {
+        // Find the updated attribute from the new attributes array
+        const updatedAttribute = attributes.find(attr => attr.id === selectedAttribute.id);
+        if (updatedAttribute) {
+          // Update selectedAttribute with the fresh data from Redux
+          setSelectedAttribute(updatedAttribute);
+        } else {
+          // If current selected attribute no longer exists, select the first one
+          setSelectedAttribute(attributes[0]);
+        }
+      }
+    } else {
+      // If no attributes, clear selection
+      setSelectedAttribute(null);
     }
-  };
+  }, [attributes]);
 
   const handleAddAttribute = () => {
     setEditingAttribute(null);
     setAttributeForm({
       name: '',
-      isActive: true,
     });
+    setErrors({});
     setShowAttributeModal(true);
   };
 
-  const handleEditAttribute = (attribute: ProductAttribute) => {
+  const handleEditAttribute = (attribute: AttributeWithValues) => {
     setEditingAttribute(attribute);
     setAttributeForm({
-      name: attribute.name,
-      isActive: attribute.isActive,
+      name: attribute.name || '',
     });
+    setErrors({});
     setShowAttributeModal(true);
   };
 
   const handleSaveAttribute = () => {
-    // Handle save logic here
-    console.log('Saving attribute:', attributeForm);
-    setShowAttributeModal(false);
-    fetchAttributes(); // Refresh the list
-  };
+    const newErrors: { [key: string]: string } = {};
 
-  const handleAddValue = (attribute: ProductAttribute | null) => {
-    if (!attribute && attributes.length > 0) {
-      // If no attribute selected, show attribute selection modal first
-      setShowAttributeSelectionModal(true);
+    if (!attributeForm.name.trim()) {
+      newErrors.name = 'Attribute name is required';
+    } else if (attributeForm.name.length > 100) {
+      newErrors.name = 'Attribute name cannot exceed 100 characters';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
-    if (attribute) {
-      setSelectedAttribute(attribute);
+    if (editingAttribute) {
+      // Update existing attribute
+      dispatch(updateProductAttribute({ ...editingAttribute, name: attributeForm.name.trim() }));
+    } else {
+      // Create new attribute
+      dispatch(createProductAttribute({ name: attributeForm.name.trim() }));
+    }
+    setShowAttributeModal(false);
+    setErrors({});
+  };
+
+  const handleAddValue = () => {
+    if (selectedAttribute) {
       setEditingValue(null);
       setValueForm({
         value: '',
-        isActive: true,
+        attributeId: selectedAttribute.id,
       });
+      setErrors({});
       setShowValueModal(true);
     }
   };
 
-  const handleEditValue = (value: ProductAttributeValue) => {
+  const handleEditValue = (value: AttributeValue) => {
     setEditingValue(value);
     setValueForm({
-      value: value.value,
-      isActive: value.isActive,
+      value: value.value || '',
+      attributeId: selectedAttribute?.id || null,
     });
+    setErrors({});
     setShowValueModal(true);
   };
 
   const handleSaveValue = () => {
-    // Handle save logic here
-    console.log('Saving value:', valueForm);
+    const newErrors: { [key: string]: string } = {};
+
+    if (!valueForm.value.trim()) {
+      newErrors.value = 'Attribute value is required';
+    } else if (valueForm.value.length > 100) {
+      newErrors.value = 'Attribute value cannot exceed 100 characters';
+    }
+
+    if (!valueForm.attributeId) {
+      newErrors.attributeId = 'Please select an attribute';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setSavingValue(true);
+    if (editingValue) {
+      // Update existing value
+      dispatch(
+        updateAttributeValue({
+          id: editingValue.id,
+          value: valueForm.value.trim(),
+          attributeId: valueForm.attributeId,
+        }),
+      );
+    } else {
+      // Create new value
+      dispatch(
+        createAttributeValue({
+          value: valueForm.value.trim(),
+          attributeId: valueForm.attributeId,
+        }),
+      );
+    }
+    // Close modal and clear errors after successful save
     setShowValueModal(false);
-    fetchAttributes(); // Refresh the list
+    setErrors({});
+    setSavingValue(false);
   };
 
-  const handleDeleteAttribute = (attribute: ProductAttribute) => {
-    setItemToDelete(attribute);
-    setDeleteType('attribute');
-    setShowDeleteModal(true);
-  };
-
-  const handleDeleteValue = (value: ProductAttributeValue) => {
+  const handleDeleteValue = (value: AttributeValue) => {
     setItemToDelete(value);
-    setDeleteType('value');
     setShowDeleteModal(true);
   };
 
   const confirmDelete = () => {
-    // Handle delete logic here
-    console.log('Deleting:', itemToDelete, deleteType);
+    if (itemToDelete) {
+      dispatch(deleteAttributeValue(itemToDelete.id));
+    }
     setShowDeleteModal(false);
     setItemToDelete(null);
-    fetchAttributes(); // Refresh the list
   };
 
   const filteredAttributes = attributes.filter(
     attribute =>
-      attribute.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      attribute.values.some(value => value.value.toLowerCase().includes(searchTerm.toLowerCase())),
+      attribute.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      attribute.values?.some(value => value.value?.toLowerCase().includes(searchTerm.toLowerCase())),
   );
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredAttributes.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentAttributes = filteredAttributes.slice(startIndex, endIndex);
-
-  if (loading) {
+  if (loading && attributes.length === 0) {
     return (
       <Container>
         <div className="text-center py-5">
@@ -209,12 +218,24 @@ const AttributeManagement = () => {
 
   return (
     <Container fluid>
+      {/* Error Alert */}
+      {errorMessage && (
+        <Row className="mb-4">
+          <Col>
+            <Alert variant="danger" dismissible>
+              <strong>Error:</strong> {errorMessage}
+            </Alert>
+          </Col>
+        </Row>
+      )}
+
+      {/* Header */}
       <Row className="mb-4">
         <Col>
           <div className="d-flex justify-content-between align-items-center">
             <div>
               <h2>Attribute Management</h2>
-              <p className="text-muted">Attribute Management và giá trị thuộc tính sản phẩm</p>
+              <p className="text-muted">Manage product attributes and their values</p>
             </div>
             <Button variant="primary" onClick={handleAddAttribute}>
               <FaPlus className="me-2" />
@@ -226,253 +247,144 @@ const AttributeManagement = () => {
 
       {/* Search */}
       <Row className="mb-4">
-        <Col md={6}>
+        <Col>
           <InputGroup>
             <InputGroup.Text>
               <FaSearch />
             </InputGroup.Text>
-            <Form.Control
-              type="text"
-              placeholder="Search attributes or values..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
+            <Form.Control type="text" placeholder="Search attributes..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
           </InputGroup>
         </Col>
       </Row>
 
-      {/* Tabs */}
-      <Tabs activeKey={activeTab} onSelect={k => setActiveTab(k || 'attributes')} className="mb-4">
-        <Tab eventKey="attributes" title="Attributes">
-          <Card className="border-0 shadow-sm">
-            <Card.Body className="p-0">
-              <Table responsive className="mb-0">
-                <thead className="table-light">
-                  <tr>
-                    <th>Attribute Name</th>
-                    <th>Number of Values</th>
-                    <th>Trạng thái</th>
-                    <th>Created Date</th>
-                    <th>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentAttributes.map(attribute => (
-                    <tr key={attribute.id}>
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <FaCogs className="me-2 text-primary" />
-                          <span className="fw-medium">{attribute.name}</span>
+      {/* Two Column Layout */}
+      <Row>
+        {/* Left Column - Attributes List */}
+        <Col md={4}>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-white border-bottom">
+              <h5 className="mb-0">Attributes</h5>
+            </Card.Header>
+            <Card.Body className="p-0" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+              {filteredAttributes.length === 0 ? (
+                <div className="text-center py-4">
+                  <div className="text-muted">
+                    <FaCogs className="mb-2" style={{ fontSize: '2rem' }} />
+                    {searchTerm ? (
+                      <>
+                        <p className="mb-0">No results found</p>
+                        <small>Try searching with different keywords</small>
+                      </>
+                    ) : (
+                      <>
+                        <p className="mb-0">No attributes yet</p>
+                        <small>Click &quot;Add Attribute&quot; to create your first attribute</small>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="list-group list-group-flush">
+                  {filteredAttributes.map(attribute => (
+                    <div
+                      key={attribute.id}
+                      className={`list-group-item list-group-item-action cursor-pointer ${
+                        selectedAttribute?.id === attribute.id ? 'active' : ''
+                      }`}
+                      onClick={() => setSelectedAttribute(attribute)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                          <div className="d-flex align-items-center">
+                            <FaCogs className="me-2 text-primary" />
+                            <span className="fw-medium">{attribute.name}</span>
+                          </div>
+                          <small className="text-muted">{attribute.values?.length || 0} values</small>
                         </div>
-                      </td>
-                      <td>
-                        <Badge bg="info">{attribute.values.length} giá trị</Badge>
-                      </td>
-                      <td>
-                        <Badge bg={attribute.isActive ? 'success' : 'danger'}>{attribute.isActive ? 'Hoạt động' : 'Tạm dừng'}</Badge>
-                      </td>
-                      <td>{attribute.createdAt}</td>
-                      <td>
                         <div className="d-flex gap-1">
                           <Button
-                            variant="outline-primary"
+                            variant="outline-warning"
                             size="sm"
-                            title="View Values"
-                            onClick={() => {
-                              setSelectedAttribute(attribute);
-                              setActiveTab('values');
+                            title="Edit"
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleEditAttribute(attribute);
                             }}
                           >
-                            <FaList />
-                          </Button>
-                          <Button variant="outline-warning" size="sm" title="Chỉnh sửa" onClick={() => handleEditAttribute(attribute)}>
                             <FaEdit />
                           </Button>
-                          <Button variant="outline-danger" size="sm" title="Xóa" onClick={() => handleDeleteAttribute(attribute)}>
-                            <FaTrash />
-                          </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </Table>
-            </Card.Body>
-          </Card>
-        </Tab>
-
-        <Tab eventKey="values" title="Attribute Values">
-          <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-white border-bottom">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <h5 className="mb-0">{selectedAttribute ? `Values of "${selectedAttribute.name}"` : 'All Attribute Values'}</h5>
-                  {selectedAttribute && (
-                    <small className="text-muted">
-                      <Button variant="link" size="sm" className="p-0 text-decoration-none" onClick={() => setSelectedAttribute(null)}>
-                        ← Back to all attributes
-                      </Button>
-                    </small>
-                  )}
                 </div>
-                <div className="d-flex gap-2">
-                  {!selectedAttribute && (
-                    <Form.Select
-                      size="sm"
-                      style={{ width: '200px' }}
-                      value={selectedAttribute?.id || ''}
-                      onChange={e => {
-                        const attrId = parseInt(e.target.value, 10);
-                        const attr = attributes.find(a => a.id === attrId);
-                        setSelectedAttribute(attr || null);
-                      }}
-                    >
-                      <option value="">Filter by attribute...</option>
-                      {attributes.map(attr => (
-                        <option key={attr.id} value={attr.id}>
-                          {attr.name}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  )}
-                  <Button variant="primary" size="sm" onClick={() => handleAddValue(selectedAttribute)} disabled={attributes.length === 0}>
-                    <FaPlus className="me-2" />
-                    Add Value
-                  </Button>
-                </div>
-              </div>
-            </Card.Header>
-            <Card.Body className="p-0">
-              {selectedAttribute ? (
-                <Table responsive className="mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Value</th>
-                      <th>Trạng thái</th>
-                      <th>Created Date</th>
-                      <th>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedAttribute.values.map(value => (
-                      <tr key={value.id}>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            <FaTag className="me-2 text-secondary" />
-                            <span className="fw-medium">{value.value}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <Badge bg={value.isActive ? 'success' : 'danger'}>{value.isActive ? 'Hoạt động' : 'Tạm dừng'}</Badge>
-                        </td>
-                        <td>{value.createdAt}</td>
-                        <td>
-                          <div className="d-flex gap-1">
-                            <Button variant="outline-warning" size="sm" title="Chỉnh sửa" onClick={() => handleEditValue(value)}>
-                              <FaEdit />
-                            </Button>
-                            <Button variant="outline-danger" size="sm" title="Xóa" onClick={() => handleDeleteValue(value)}>
-                              <FaTrash />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              ) : (
-                <Table responsive className="mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Attribute</th>
-                      <th>Value</th>
-                      <th>Status</th>
-                      <th>Created Date</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {attributes.flatMap(attribute =>
-                      attribute.values.map(value => (
-                        <tr key={`${attribute.id}-${value.id}`}>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <FaCogs className="me-2 text-primary" />
-                              <span className="fw-medium">{attribute.name}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <FaTag className="me-2 text-secondary" />
-                              <span className="fw-medium">{value.value}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <Badge bg={value.isActive ? 'success' : 'danger'}>{value.isActive ? 'Active' : 'Inactive'}</Badge>
-                          </td>
-                          <td>{value.createdAt}</td>
-                          <td>
-                            <div className="d-flex gap-1">
-                              <Button
-                                variant="outline-info"
-                                size="sm"
-                                title="View Attribute"
-                                onClick={() => {
-                                  setSelectedAttribute(attribute);
-                                  setActiveTab('values');
-                                }}
-                              >
-                                <FaCogs />
-                              </Button>
-                              <Button variant="outline-warning" size="sm" title="Edit" onClick={() => handleEditValue(value)}>
-                                <FaEdit />
-                              </Button>
-                              <Button variant="outline-danger" size="sm" title="Delete" onClick={() => handleDeleteValue(value)}>
-                                <FaTrash />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      )),
-                    )}
-                  </tbody>
-                </Table>
               )}
             </Card.Body>
           </Card>
-        </Tab>
-      </Tabs>
+        </Col>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Row className="mt-4">
-          <Col>
-            <div className="d-flex justify-content-between align-items-center">
-              <small className="text-muted">
-                Showing {startIndex + 1}-{Math.min(endIndex, filteredAttributes.length)} of {filteredAttributes.length} attributes
-              </small>
-              <Pagination>
-                <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
-                <Pagination.Prev onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1} />
-
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <Pagination.Item key={page} active={page === currentPage} onClick={() => setCurrentPage(page)}>
-                    {page}
-                  </Pagination.Item>
-                ))}
-
-                <Pagination.Next onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages} />
-                <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
-              </Pagination>
-            </div>
-          </Col>
-        </Row>
-      )}
+        {/* Right Column - Values List */}
+        <Col md={8}>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-white border-bottom">
+              <div className="d-flex justify-content-between align-items-center">
+                <h5 className="mb-0">{selectedAttribute ? `Values for "${selectedAttribute.name}"` : 'Select an attribute'}</h5>
+                {selectedAttribute && (
+                  <Button variant="outline-primary" size="sm" onClick={handleAddValue}>
+                    <FaPlus className="me-2" />
+                    Add Value
+                  </Button>
+                )}
+              </div>
+            </Card.Header>
+            <Card.Body className="p-0" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+              {!selectedAttribute ? (
+                <div className="text-center py-5">
+                  <div className="text-muted">
+                    <FaList className="mb-2" style={{ fontSize: '2rem' }} />
+                    <p className="mb-0">Select an attribute to view its values</p>
+                  </div>
+                </div>
+              ) : selectedAttribute.values?.length === 0 ? (
+                <div className="text-center py-5">
+                  <div className="text-muted">
+                    <FaTag className="mb-2" style={{ fontSize: '2rem' }} />
+                    <p className="mb-0">No values for this attribute yet</p>
+                    <small>Click &quot;Add Value&quot; to create the first value</small>
+                  </div>
+                </div>
+              ) : (
+                <div className="list-group list-group-flush">
+                  {selectedAttribute.values?.map(value => (
+                    <div key={value.id} className="list-group-item">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div className="d-flex align-items-center">
+                          <FaTag className="me-2 text-secondary" />
+                          <span className="fw-medium">{value.value}</span>
+                        </div>
+                        <div className="d-flex gap-1">
+                          <Button variant="outline-warning" size="sm" title="Edit" onClick={() => handleEditValue(value)}>
+                            <FaEdit />
+                          </Button>
+                          <Button variant="outline-danger" size="sm" title="Delete" onClick={() => handleDeleteValue(value)}>
+                            <FaTrash />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
       {/* Add/Edit Attribute Modal */}
       <Modal show={showAttributeModal} onHide={() => setShowAttributeModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>{editingAttribute ? 'Edit Attribute' : 'Add Attribute mới'}</Modal.Title>
+          <Modal.Title>{editingAttribute ? 'Edit Attribute' : 'Add New Attribute'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
@@ -481,29 +393,26 @@ const AttributeManagement = () => {
               <Form.Control
                 type="text"
                 value={attributeForm.name}
-                onChange={e => setAttributeForm({ ...attributeForm, name: e.target.value })}
-                placeholder="Ví dụ: Size, Color, Material..."
+                onChange={e => {
+                  setAttributeForm({ ...attributeForm, name: e.target.value });
+                  if (errors.name) {
+                    setErrors({ ...errors, name: '' });
+                  }
+                }}
+                placeholder="e.g. Size, Color, Material..."
+                isInvalid={!!errors.name}
               />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Check
-                type="switch"
-                id="isActive"
-                label="Attributes hoạt động"
-                checked={attributeForm.isActive}
-                onChange={e => setAttributeForm({ ...attributeForm, isActive: e.target.checked })}
-              />
+              {errors.name && <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>}
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowAttributeModal(false)}>
-            Hủy
+            Cancel
           </Button>
-          <Button variant="primary" onClick={handleSaveAttribute}>
+          <Button variant="primary" onClick={() => void handleSaveAttribute()} disabled={updating}>
             <FaSave className="me-2" />
-            {editingAttribute ? 'Cập nhật' : 'Thêm mới'}
+            {updating ? 'Saving...' : editingAttribute ? 'Update' : 'Add'}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -511,76 +420,47 @@ const AttributeManagement = () => {
       {/* Add/Edit Value Modal */}
       <Modal show={showValueModal} onHide={() => setShowValueModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>{editingValue ? 'Edit Value' : `Add Value cho "${selectedAttribute?.name}"`}</Modal.Title>
+          <Modal.Title>{editingValue ? 'Edit Value' : `Add Value for "${selectedAttribute?.name}"`}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Attribute *</Form.Label>
+              <Form.Control
+                type="text"
+                value={selectedAttribute?.name || ''}
+                disabled
+                placeholder="Selected attribute"
+                isInvalid={!!errors.attributeId}
+              />
+              {errors.attributeId && <Form.Control.Feedback type="invalid">{errors.attributeId}</Form.Control.Feedback>}
+            </Form.Group>
+
             <Form.Group className="mb-3">
               <Form.Label>Value *</Form.Label>
               <Form.Control
                 type="text"
                 value={valueForm.value}
-                onChange={e => setValueForm({ ...valueForm, value: e.target.value })}
+                onChange={e => {
+                  setValueForm({ ...valueForm, value: e.target.value });
+                  if (errors.value) {
+                    setErrors({ ...errors, value: '' });
+                  }
+                }}
                 placeholder="Enter attribute value"
+                isInvalid={!!errors.value}
               />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Check
-                type="switch"
-                id="isActive"
-                label="Value hoạt động"
-                checked={valueForm.isActive}
-                onChange={e => setValueForm({ ...valueForm, isActive: e.target.checked })}
-              />
+              {errors.value && <Form.Control.Feedback type="invalid">{errors.value}</Form.Control.Feedback>}
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowValueModal(false)}>
-            Hủy
-          </Button>
-          <Button variant="primary" onClick={handleSaveValue}>
-            <FaSave className="me-2" />
-            {editingValue ? 'Cập nhật' : 'Thêm mới'}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Attribute Selection Modal */}
-      <Modal show={showAttributeSelectionModal} onHide={() => setShowAttributeSelectionModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Select Attribute</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>Please select an attribute to add a value to:</p>
-          <Form.Select
-            onChange={e => {
-              const attrId = parseInt(e.target.value, 10);
-              const attr = attributes.find(a => a.id === attrId);
-              if (attr) {
-                setSelectedAttribute(attr);
-                setShowAttributeSelectionModal(false);
-                setEditingValue(null);
-                setValueForm({
-                  value: '',
-                  isActive: true,
-                });
-                setShowValueModal(true);
-              }
-            }}
-          >
-            <option value="">Choose an attribute...</option>
-            {attributes.map(attr => (
-              <option key={attr.id} value={attr.id}>
-                {attr.name}
-              </option>
-            ))}
-          </Form.Select>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAttributeSelectionModal(false)}>
             Cancel
+          </Button>
+          <Button variant="primary" onClick={() => void handleSaveValue()} disabled={savingValue}>
+            <FaSave className="me-2" />
+            {savingValue ? 'Saving...' : editingValue ? 'Update' : 'Add'}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -588,24 +468,15 @@ const AttributeManagement = () => {
       {/* Delete Confirmation Modal */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Xác nhận xóa</Modal.Title>
+          <Modal.Title>Confirm Delete</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete {deleteType === 'attribute' ? 'attribute' : 'value'} &quot;
-          {deleteType === 'attribute' ? itemToDelete?.name : itemToDelete?.value}&quot;?
-          {deleteType === 'attribute' && itemToDelete?.values?.length > 0 && (
-            <Alert variant="warning" className="mt-2">
-              <strong>Cảnh báo:</strong> Attributes này có {itemToDelete.values.length} giá trị. Tất cả giá trị cũng sẽ bị xóa.
-            </Alert>
-          )}
-          Hành động này không thể hoàn tác.
-        </Modal.Body>
+        <Modal.Body>Are you sure you want to delete value &quot;{itemToDelete?.value}&quot;? This action cannot be undone.</Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Hủy
+            Cancel
           </Button>
           <Button variant="danger" onClick={confirmDelete}>
-            Xóa
+            Delete
           </Button>
         </Modal.Footer>
       </Modal>

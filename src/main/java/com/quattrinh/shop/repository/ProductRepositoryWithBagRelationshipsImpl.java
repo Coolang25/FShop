@@ -7,9 +7,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Utility repository to load bag relationships based on https://vladmihalcea.com/hibernate-multiplebagfetchexception/
@@ -57,7 +59,10 @@ public class ProductRepositoryWithBagRelationshipsImpl implements ProductReposit
 
     Product fetchVariants(Product result) {
         return entityManager
-            .createQuery("select product from Product product left join fetch product.variants where product.id = :id", Product.class)
+            .createQuery(
+                "select product from Product product left join fetch product.variants variant left join fetch variant.attributeValues attrVal left join fetch attrVal.attribute where product.id = :id",
+                Product.class
+            )
             .setParameter(ID_PARAMETER, result.getId())
             .getSingleResult();
     }
@@ -66,10 +71,41 @@ public class ProductRepositoryWithBagRelationshipsImpl implements ProductReposit
         HashMap<Object, Integer> order = new HashMap<>();
         IntStream.range(0, products.size()).forEach(index -> order.put(products.get(index).getId(), index));
         List<Product> result = entityManager
-            .createQuery("select product from Product product left join fetch product.variants where product in :products", Product.class)
+            .createQuery(
+                "select product from Product product left join fetch product.variants variant left join fetch variant.attributeValues attrVal left join fetch attrVal.attribute where product in :products",
+                Product.class
+            )
             .setParameter(PRODUCTS_PARAMETER, products)
             .getResultList();
         Collections.sort(result, (o1, o2) -> Integer.compare(order.get(o1.getId()), order.get(o2.getId())));
         return result;
+    }
+
+    @Override
+    public Page<Product> findAllWithEagerRelationshipsAndSearch(Pageable pageable, String search) {
+        // First get the products with search
+        List<Product> products = entityManager
+            .createQuery(
+                "select product from Product product where product.isActive = true and (lower(product.name) like lower(concat('%', :search, '%')) or lower(product.description) like lower(concat('%', :search, '%')))",
+                Product.class
+            )
+            .setParameter("search", search)
+            .setFirstResult((int) pageable.getOffset())
+            .setMaxResults(pageable.getPageSize())
+            .getResultList();
+
+        // Get total count
+        Long totalCount = entityManager
+            .createQuery(
+                "select count(product) from Product product where product.isActive = true and (lower(product.name) like lower(concat('%', :search, '%')) or lower(product.description) like lower(concat('%', :search, '%')))",
+                Long.class
+            )
+            .setParameter("search", search)
+            .getSingleResult();
+
+        // Fetch bag relationships
+        List<Product> productsWithRelationships = fetchBagRelationships(products);
+
+        return new PageImpl<>(productsWithRelationships, pageable, totalCount);
     }
 }

@@ -18,6 +18,8 @@ public class ProductAttributeValueDTO implements Serializable {
 
     private Long attributeId;
 
+    private ProductAttributeDTO attribute;
+
     public Long getId() {
         return id;
     }
@@ -62,6 +64,7 @@ public class ProductAttributeValueDTO implements Serializable {
             "id=" + getId() +
             ", value='" + getValue() + "'" +
             ", attributeId=" + getAttributeId() +
+            ", attribute=" + getAttribute() +
             "}";
     }
 
@@ -71,5 +74,13 @@ public class ProductAttributeValueDTO implements Serializable {
 
     public void setAttributeId(Long attributeId) {
         this.attributeId = attributeId;
+    }
+
+    public ProductAttributeDTO getAttribute() {
+        return attribute;
+    }
+
+    public void setAttribute(ProductAttributeDTO attribute) {
+        this.attribute = attribute;
     }
 }

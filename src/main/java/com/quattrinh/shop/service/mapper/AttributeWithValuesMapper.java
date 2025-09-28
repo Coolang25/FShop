@@ -15,33 +15,6 @@ import org.springframework.stereotype.Component;
 public class AttributeWithValuesMapper {
 
     /**
-     * Convert ProductAttributeDTO to AttributeWithValuesDTO.
-     *
-     * @param productAttributeDTO the ProductAttributeDTO to convert.
-     * @return the converted AttributeWithValuesDTO.
-     */
-    public AttributeWithValuesDTO toAttributeWithValuesDTO(ProductAttributeDTO productAttributeDTO) {
-        if (productAttributeDTO == null) {
-            return null;
-        }
-
-        AttributeWithValuesDTO dto = new AttributeWithValuesDTO();
-        dto.setId(productAttributeDTO.getId());
-        dto.setName(productAttributeDTO.getName());
-
-        if (productAttributeDTO.getValues() != null) {
-            List<AttributeValueDTO> values = productAttributeDTO
-                .getValues()
-                .stream()
-                .map(this::toAttributeValueDTO)
-                .collect(Collectors.toList());
-            dto.setValues(values);
-        }
-
-        return dto;
-    }
-
-    /**
      * Convert ProductAttributeValueDTO to AttributeValueDTO.
      *
      * @param productAttributeValueDTO the ProductAttributeValueDTO to convert.

@@ -79,10 +79,16 @@ public class ProductService {
     /**
      * Get all the products with eager load of many-to-many relationships.
      *
+     * @param pageable the pagination information.
+     * @param search the search term for filtering products by name or description.
      * @return the list of entities.
      */
-    public Page<ProductDTO> findAllWithEagerRelationships(Pageable pageable) {
-        return productRepository.findAllWithEagerRelationships(pageable).map(productMapper::toDto);
+    public Page<ProductDTO> findAllWithEagerRelationships(Pageable pageable, String search) {
+        if (search != null && !search.trim().isEmpty()) {
+            return productRepository.findAllWithEagerRelationshipsAndSearch(pageable, search.trim()).map(productMapper::toDto);
+        } else {
+            return productRepository.findAllWithEagerRelationships(pageable).map(productMapper::toDto);
+        }
     }
 
     /**

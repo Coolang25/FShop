@@ -95,6 +95,11 @@ public class ProductDTO implements Serializable {
         this.isActive = isActive;
     }
 
+    public ProductDTO id(Long id) {
+        this.setId(id);
+        return this;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

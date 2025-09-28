@@ -37,4 +37,9 @@ public interface ProductRepository
 
     @Query("SELECT p FROM Product p WHERE p.id = :id AND p.isActive = true")
     Optional<Product> findOneActive(Long id);
+
+    @Query(
+        "SELECT p FROM Product p WHERE p.isActive = true AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')))"
+    )
+    Page<Product> findAllActiveWithSearch(Pageable pageable, String search);
 }

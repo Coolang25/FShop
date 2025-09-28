@@ -27,15 +27,19 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     }
 
     @Query(
-        value = "select productVariant from ProductVariant productVariant left join fetch productVariant.product",
+        value = "select productVariant from ProductVariant productVariant left join fetch productVariant.product left join fetch productVariant.attributeValues left join fetch productVariant.attributeValues.attribute",
         countQuery = "select count(productVariant) from ProductVariant productVariant"
     )
     Page<ProductVariant> findAllWithToOneRelationships(Pageable pageable);
 
-    @Query("select productVariant from ProductVariant productVariant left join fetch productVariant.product")
+    @Query(
+        "select productVariant from ProductVariant productVariant left join fetch productVariant.product left join fetch productVariant.attributeValues left join fetch productVariant.attributeValues.attribute"
+    )
     List<ProductVariant> findAllWithToOneRelationships();
 
-    @Query("select productVariant from ProductVariant productVariant left join fetch productVariant.product where productVariant.id =:id")
+    @Query(
+        "select productVariant from ProductVariant productVariant left join fetch productVariant.product left join fetch productVariant.attributeValues left join fetch productVariant.attributeValues.attribute where productVariant.id =:id"
+    )
     Optional<ProductVariant> findOneWithToOneRelationships(@Param("id") Long id);
 
     @Query("SELECT pv FROM ProductVariant pv WHERE pv.isActive = true")

@@ -32,7 +32,7 @@
 
     <changeSet id="20250907024303-1-relations" author="quattt">
 
-        <createTable tableName="rel_products__categories">
+        <createTable tableName="products__categories">
             <column name="category_id" type="bigint">
                 <constraints nullable="false"/>
             </column>
@@ -41,6 +41,6 @@
             </column>
         </createTable>
 
-        <addPrimaryKey columnNames="product_id, category_id" tableName="rel_products__categories"/>
+        <addPrimaryKey columnNames="product_id, category_id" tableName="products__categories"/>
     </changeSet>
 </databaseChangeLog>

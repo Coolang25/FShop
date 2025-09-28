@@ -20,8 +20,8 @@
             <column name="price" type="decimal(21,2)">
                 <constraints nullable="false" />
             </column>
-            <column name="stock" type="integer">
-                <constraints nullable="false" />
+            <column name="stock" type="integer" defaultValue="0">
+                <constraints nullable="false"/>
             </column>
             <column name="product_id" type="bigint">
                 <constraints nullable="true" />

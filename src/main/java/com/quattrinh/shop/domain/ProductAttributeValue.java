@@ -1,8 +1,11 @@
 package com.quattrinh.shop.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -29,6 +32,11 @@ public class ProductAttributeValue implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private ProductAttribute attribute;
+
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "attributeValues")
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @JsonIgnoreProperties(value = { "product", "attributeValues" }, allowSetters = true)
+    private Set<ProductVariant> variants = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -68,6 +76,31 @@ public class ProductAttributeValue implements Serializable {
 
     public ProductAttributeValue attribute(ProductAttribute productAttribute) {
         this.setAttribute(productAttribute);
+        return this;
+    }
+
+    public Set<ProductVariant> getVariants() {
+        return this.variants;
+    }
+
+    public void setVariants(Set<ProductVariant> variants) {
+        this.variants = variants;
+    }
+
+    public ProductAttributeValue variants(Set<ProductVariant> variants) {
+        this.setVariants(variants);
+        return this;
+    }
+
+    public ProductAttributeValue addVariant(ProductVariant variant) {
+        this.variants.add(variant);
+        variant.getAttributeValues().add(this);
+        return this;
+    }
+
+    public ProductAttributeValue removeVariant(ProductVariant variant) {
+        this.variants.remove(variant);
+        variant.getAttributeValues().remove(this);
         return this;
     }
 

@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -35,8 +37,8 @@ public class ProductVariant implements Serializable {
 
     @NotNull
     @Min(value = 0)
-    @Column(name = "stock", nullable = false)
-    private Integer stock;
+    @Column(name = "stock", nullable = false, columnDefinition = "integer default 0")
+    private Integer stock = 0;
 
     @Column(name = "image_url")
     private String imageUrl;
@@ -47,6 +49,16 @@ public class ProductVariant implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnoreProperties(value = { "categories" }, allowSetters = true)
     private Product product;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "product_variants__product_attribute_values",
+        joinColumns = @JoinColumn(name = "variant_id"),
+        inverseJoinColumns = @JoinColumn(name = "attribute_value_id")
+    )
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @JsonIgnoreProperties(value = { "attribute" }, allowSetters = true)
+    private Set<ProductAttributeValue> attributeValues = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -138,6 +150,29 @@ public class ProductVariant implements Serializable {
 
     public ProductVariant product(Product product) {
         this.setProduct(product);
+        return this;
+    }
+
+    public Set<ProductAttributeValue> getAttributeValues() {
+        return this.attributeValues;
+    }
+
+    public void setAttributeValues(Set<ProductAttributeValue> attributeValues) {
+        this.attributeValues = attributeValues;
+    }
+
+    public ProductVariant attributeValues(Set<ProductAttributeValue> attributeValues) {
+        this.setAttributeValues(attributeValues);
+        return this;
+    }
+
+    public ProductVariant addAttributeValue(ProductAttributeValue attributeValue) {
+        this.attributeValues.add(attributeValue);
+        return this;
+    }
+
+    public ProductVariant removeAttributeValue(ProductAttributeValue attributeValue) {
+        this.attributeValues.remove(attributeValue);
         return this;
     }
 

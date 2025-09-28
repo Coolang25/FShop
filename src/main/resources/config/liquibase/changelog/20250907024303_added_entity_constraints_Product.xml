@@ -11,15 +11,15 @@
     <changeSet id="20250907024303-2" author="quattt">
 
         <addForeignKeyConstraint baseColumnNames="product_id"
-                                 baseTableName="rel_products__categories"
-                                 constraintName="fk_rel_products__categories__product_id"
+                                 baseTableName="products__categories"
+                                 constraintName="fk_products__categories__product_id"
                                  referencedColumnNames="id"
                                  referencedTableName="products"
                                  />
 
         <addForeignKeyConstraint baseColumnNames="category_id"
-                                 baseTableName="rel_products__categories"
-                                 constraintName="fk_rel_products__categories__category_id"
+                                 baseTableName="products__categories"
+                                 constraintName="fk_products__categories__category_id"
                                  referencedColumnNames="id"
                                  referencedTableName="categories"
                                  />

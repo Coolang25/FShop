@@ -68,7 +68,7 @@ interface Product {
   description?: string;
   basePrice?: number;
   imageUrl?: string;
-  categories?: { id: number; name: string }[];
+  categories?: { id?: number; name?: string }[];
   variants?: ProductVariant[];
   isActive?: boolean;
   createdAt?: string;
@@ -78,11 +78,17 @@ interface ProductVariant {
   id?: number;
   sku?: string;
   price?: number;
-  stock?: number;
   imageUrl?: string;
   isActive?: boolean;
   product?: any;
-  attributeValues?: { [attributeName: string]: { id: number; value: string } };
+  attributeValues?: Array<{
+    id?: number;
+    value?: string;
+    attribute?: {
+      id?: number;
+      name?: string;
+    };
+  }>;
 }
 
 const ProductManagement = () => {
@@ -91,6 +97,7 @@ const ProductManagement = () => {
   const attributesLoading = useAppSelector(state => state.productAttribute.loading);
   const products = useAppSelector(state => state.product.entities);
   const productsLoading = useAppSelector(state => state.product.loading);
+  const totalItems = useAppSelector(state => state.product.totalItems) || 0;
   const productVariants = useAppSelector(state => state.productVariant.entities);
   const productVariantsLoading = useAppSelector(state => state.productVariant.loading);
   const categories = useAppSelector(state => state.category.entities);
@@ -103,6 +110,16 @@ const ProductManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setCurrentPage(0); // Reset to first page when searching
+      fetchProducts(0, searchTerm);
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   // File input refs
@@ -124,11 +141,11 @@ const ProductManagement = () => {
   }, [attributes]);
 
   // Products now come with variants from BE, no need to map
-  const productsWithVariants = products;
+  const productsWithVariants = products as Product[];
   const [showAttributeSelectionModal, setShowAttributeSelectionModal] = useState(false);
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
+  // Pagination - now handled by API
+  const [currentPage, setCurrentPage] = useState(0); // API uses 0-based indexing
   const [itemsPerPage] = useState(10);
 
   // Form state
@@ -145,14 +162,13 @@ const ProductManagement = () => {
   const [variantForm, setVariantForm] = useState({
     sku: '',
     price: '',
-    stock: '',
     imageUrl: '',
     isActive: true,
     attributeValues: {} as { [attributeName: string]: { id: number; value: string } },
   });
 
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(0, searchTerm);
     fetchAvailableAttributes();
     fetchCategories();
     // Fetch all variants
@@ -164,9 +180,9 @@ const ProductManagement = () => {
     setLoading(productsLoading || attributesLoading || categoriesLoading);
   }, [productsLoading, attributesLoading, categoriesLoading]);
 
-  const fetchProducts = () => {
-    // Use the new endpoint that includes variants
-    dispatch(getProductsWithVariants({ page: 0, size: 100, sort: 'id,asc' }));
+  const fetchProducts = (page = 0, search = '') => {
+    // Use the new endpoint that includes variants with pagination and search
+    dispatch(getProductsWithVariants({ page, size: 10, sort: 'id,asc', search }));
   };
 
   const fetchAvailableAttributes = () => {
@@ -392,7 +408,6 @@ const ProductManagement = () => {
     setVariantForm({
       sku: '',
       price: product.basePrice?.toString() || '0',
-      stock: '0',
       imageUrl: '',
       isActive: true,
       attributeValues: {},
@@ -403,63 +418,108 @@ const ProductManagement = () => {
   const handleEditVariant = (product: Product, variant: ProductVariant) => {
     setSelectedProduct(product);
     setEditingVariant(variant);
+
+    // Convert attributeValues array to the format expected by the form
+    const attributeValuesForm: { [attributeName: string]: { id: number; value: string } } = {};
+    if (variant.attributeValues) {
+      variant.attributeValues.forEach(attrValue => {
+        if (attrValue.attribute?.name) {
+          attributeValuesForm[attrValue.attribute.name] = {
+            id: attrValue.id,
+            value: attrValue.value,
+          };
+        }
+      });
+    }
+
     setVariantForm({
       sku: variant.sku || '',
       price: variant.price?.toString() || '',
-      stock: variant.stock?.toString() || '',
       imageUrl: variant.imageUrl || '',
       isActive: variant.isActive ?? true,
-      attributeValues: { ...variant.attributeValues },
+      attributeValues: attributeValuesForm,
     });
     setShowVariantModal(true);
   };
 
-  const handleSaveVariant = () => {
+  const handleSaveVariant = async () => {
     if (!selectedProduct?.id) return;
+
+    // Convert attribute values to the format expected by backend
+    const attributeValues = Object.entries(variantForm.attributeValues)
+      .filter(([_, valueObj]) => valueObj && valueObj.id && valueObj.value)
+      .map(([_, valueObj]) => ({
+        id: valueObj.id,
+      }));
 
     const variantData = {
       sku: variantForm.sku,
       price: parseFloat(variantForm.price),
-      stock: parseInt(variantForm.stock, 10),
       imageUrl: variantForm.imageUrl,
       isActive: variantForm.isActive,
       product: { id: selectedProduct.id },
+      attributeValues,
     };
 
+    let result;
     if (editingVariant?.id) {
-      dispatch(updateProductVariant({ ...variantData, id: editingVariant.id }));
+      result = await dispatch(updateProductVariant({ ...variantData, id: editingVariant.id }));
     } else {
-      dispatch(createProductVariant(variantData));
+      result = await dispatch(createProductVariant(variantData));
+    }
+
+    // Check if the operation was successful
+    if (createProductVariant.fulfilled.match(result) || updateProductVariant.fulfilled.match(result)) {
+      // Refresh the products with variants to get updated data
+      const refreshResult = await dispatch(getProductsWithVariants({ page: currentPage, size: 10, sort: 'id,asc', search: searchTerm }));
+
+      // If refresh was successful, update the selected product
+      if (getProductsWithVariants.fulfilled.match(refreshResult)) {
+        const updatedProducts = refreshResult.payload.data || [];
+        const updatedProduct = updatedProducts.find(p => p.id === selectedProduct.id);
+        if (updatedProduct) {
+          setSelectedProduct(updatedProduct);
+        }
+      }
     }
 
     setShowVariantModal(false);
-    setSelectedProduct(null);
+    // Don't reset selectedProduct - keep it for the current product
     setEditingVariant(null);
-    // Variants will be refreshed automatically via Redux
   };
 
-  const handleDeleteVariant = (product: Product, variant: ProductVariant) => {
+  const handleDeleteVariant = async (product: Product, variant: ProductVariant) => {
     if (variant.id) {
-      dispatch(deleteProductVariant(variant.id));
+      const result = await dispatch(deleteProductVariant(variant.id));
+
+      // Check if the operation was successful
+      if (deleteProductVariant.fulfilled.match(result)) {
+        // Refresh the products with variants to get updated data
+        const refreshResult = await dispatch(getProductsWithVariants({ page: currentPage, size: 10, sort: 'id,asc', search: searchTerm }));
+
+        // If refresh was successful, update the selected product
+        if (getProductsWithVariants.fulfilled.match(refreshResult)) {
+          const updatedProducts = refreshResult.payload.data || [];
+          const updatedProduct = updatedProducts.find(p => p.id === product.id);
+          if (updatedProduct) {
+            setSelectedProduct(updatedProduct);
+          }
+        }
+      }
     }
-    // Variants will be refreshed automatically via Redux
   };
 
+  // Filter by category only (search is handled by API)
   const filteredProducts = productsWithVariants.filter(product => {
-    const matchesSearch =
-      product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
       !selectedCategory ||
       product.categories?.some(cat => (typeof cat === 'string' ? cat === selectedCategory : cat.name === selectedCategory));
-    return matchesSearch && matchesCategory;
+    return matchesCategory;
   });
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+  // Pagination logic - now handled by API
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const currentProducts = filteredProducts; // API already returns paginated results
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -507,25 +567,10 @@ const ProductManagement = () => {
             <Form.Control type="text" placeholder="Search products..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
           </InputGroup>
         </Col>
-        <Col md={3}>
-          <Form.Select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}>
-            <option value="">All Categories</option>
-            <option value="Men's Fashion">Men&apos;s Fashion</option>
-            <option value="Women's Fashion">Women&apos;s Fashion</option>
-            <option value="Accessories">Accessories</option>
-            <option value="Denim">Denim</option>
-          </Form.Select>
-        </Col>
-        <Col md={3}>
-          <Button variant="outline-secondary" className="w-100">
-            <FaFilter className="me-2" />
-            Filters
-          </Button>
-        </Col>
       </Row>
 
       {/* Tabs */}
-      <Tabs activeKey={activeTab} onSelect={k => setActiveTab(k || 'products')} className="mb-4">
+      <Tabs activeKey={activeTab} onSelect={() => {}} className="mb-4">
         <Tab eventKey="products" title="Products">
           <Card className="border-0 shadow-sm">
             <Card.Body className="p-0">
@@ -557,22 +602,21 @@ const ProductManagement = () => {
                         <div>
                           <div className="d-flex align-items-center gap-2">
                             <span className="fw-medium">{product.name || 'N/A'}</span>
-                            {product.isActive === false && (
-                              <Badge bg="secondary" className="text-uppercase">
-                                Inactive
-                              </Badge>
-                            )}
                           </div>
                           <small className="text-muted">{product.description?.substring(0, 50) || 'No description'}...</small>
                         </div>
                       </td>
                       <td>
                         <div>
-                          {product.categories?.map((category, index) => (
-                            <Badge key={index} bg="secondary" className="me-1">
-                              {category.name}
-                            </Badge>
-                          ))}
+                          {product.categories && product.categories.length > 0 ? (
+                            product.categories.map(category => (
+                              <Badge key={category.id || category.name} bg="secondary" className="me-1">
+                                {category.name}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-muted">No categories</span>
+                          )}
                         </div>
                       </td>
                       <td>{formatCurrency(product.basePrice || 0)}</td>
@@ -589,8 +633,14 @@ const ProductManagement = () => {
                             size="sm"
                             title="View Variants"
                             onClick={() => {
-                              setSelectedProduct(product);
-                              setActiveTab('variants');
+                              void (async () => {
+                                // Refresh products to get latest variant data
+                                await dispatch(
+                                  getProductsWithVariants({ page: currentPage, size: 10, sort: 'id,asc', search: searchTerm }),
+                                );
+                                setSelectedProduct(product);
+                                setActiveTab('variants');
+                              })();
                             }}
                           >
                             <FaList />
@@ -621,7 +671,15 @@ const ProductManagement = () => {
           <Card className="border-0 shadow-sm">
             <Card.Header className="bg-white border-bottom">
               <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">{selectedProduct ? `Variants of "${selectedProduct.name}"` : 'Select a product to view variants'}</h5>
+                <div className="d-flex align-items-center gap-3">
+                  <Button variant="outline-secondary" size="sm" onClick={() => setActiveTab('products')} title="Back to Products">
+                    <FaList className="me-1" />
+                    Back to Products
+                  </Button>
+                  <h5 className="mb-0">
+                    {selectedProduct ? `Variants of "${selectedProduct.name}"` : 'Select a product to view variants'}
+                  </h5>
+                </div>
                 {selectedProduct && (
                   <Button variant="primary" size="sm" onClick={() => handleAddVariant(selectedProduct)}>
                     <FaPlus className="me-2" />
@@ -638,7 +696,6 @@ const ProductManagement = () => {
                       <th>SKU</th>
                       <th>Attributes</th>
                       <th>Price</th>
-                      <th>Stock</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -650,18 +707,19 @@ const ProductManagement = () => {
                         </td>
                         <td>
                           <div>
-                            {Object.entries(variant.attributeValues || {}).map(([key, valueObj]) => (
-                              <Badge key={key} bg="light" text="dark" className="me-1">
-                                {key}: {valueObj.value}
-                              </Badge>
-                            ))}
+                            {variant.attributeValues && variant.attributeValues.length > 0 ? (
+                              variant.attributeValues.map((attrValue, index) => (
+                                <Badge key={index} bg="light" text="dark" className="me-1">
+                                  {attrValue.attribute?.name || 'Unknown'}: {attrValue.value || 'N/A'}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-muted">No attributes</span>
+                            )}
                           </div>
                         </td>
                         <td>
                           <span className="fw-medium">{variant.price?.toLocaleString() || '0'} VND</span>
-                        </td>
-                        <td>
-                          <span className="fw-medium">{variant.stock || 0}</span>
                         </td>
                         <td>
                           <div className="d-flex gap-1">
@@ -677,7 +735,9 @@ const ProductManagement = () => {
                               variant="outline-danger"
                               size="sm"
                               title="Delete"
-                              onClick={() => handleDeleteVariant(selectedProduct, variant)}
+                              onClick={() => {
+                                void handleDeleteVariant(selectedProduct, variant);
+                              }}
                             >
                               <FaTrash />
                             </Button>
@@ -699,25 +759,59 @@ const ProductManagement = () => {
       </Tabs>
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {totalPages > 0 && (
         <Row className="mt-4">
           <Col>
             <div className="d-flex justify-content-between align-items-center">
               <small className="text-muted">
-                Showing {startIndex + 1}-{Math.min(endIndex, filteredProducts.length)} of {filteredProducts.length} products
+                Showing {currentPage * itemsPerPage + 1}-{Math.min((currentPage + 1) * itemsPerPage, totalItems)} of {totalItems} products
               </small>
               <Pagination>
-                <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
-                <Pagination.Prev onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1} />
+                <Pagination.First
+                  onClick={() => {
+                    setCurrentPage(0);
+                    fetchProducts(0, searchTerm);
+                  }}
+                  disabled={currentPage === 0}
+                />
+                <Pagination.Prev
+                  onClick={() => {
+                    const newPage = currentPage - 1;
+                    setCurrentPage(newPage);
+                    fetchProducts(newPage, searchTerm);
+                  }}
+                  disabled={currentPage === 0}
+                />
 
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <Pagination.Item key={page} active={page === currentPage} onClick={() => setCurrentPage(page)}>
-                    {page}
+                {Array.from({ length: totalPages }, (_, i) => i).map(page => (
+                  <Pagination.Item
+                    key={page}
+                    active={page === currentPage}
+                    onClick={() => {
+                      setCurrentPage(page);
+                      fetchProducts(page, searchTerm);
+                    }}
+                  >
+                    {page + 1}
                   </Pagination.Item>
                 ))}
 
-                <Pagination.Next onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages} />
-                <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
+                <Pagination.Next
+                  onClick={() => {
+                    const newPage = currentPage + 1;
+                    setCurrentPage(newPage);
+                    fetchProducts(newPage, searchTerm);
+                  }}
+                  disabled={currentPage === totalPages - 1}
+                />
+                <Pagination.Last
+                  onClick={() => {
+                    const newPage = totalPages - 1;
+                    setCurrentPage(newPage);
+                    fetchProducts(newPage, searchTerm);
+                  }}
+                  disabled={currentPage === totalPages - 1}
+                />
               </Pagination>
             </div>
           </Col>
@@ -895,7 +989,7 @@ const ProductManagement = () => {
         <Modal.Body>
           <Form>
             <Row>
-              <Col md={4}>
+              <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>SKU *</Form.Label>
                   <Form.Control
@@ -906,7 +1000,7 @@ const ProductManagement = () => {
                   />
                 </Form.Group>
               </Col>
-              <Col md={4}>
+              <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Price *</Form.Label>
                   <Form.Control
@@ -914,18 +1008,6 @@ const ProductManagement = () => {
                     value={variantForm.price}
                     onChange={e => setVariantForm({ ...variantForm, price: e.target.value })}
                     placeholder="Enter price"
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Stock *</Form.Label>
-                  <Form.Control
-                    type="number"
-                    value={variantForm.stock}
-                    onChange={e => setVariantForm({ ...variantForm, stock: e.target.value })}
-                    placeholder="Enter stock"
-                    min="0"
                   />
                 </Form.Group>
               </Col>
@@ -1095,7 +1177,12 @@ const ProductManagement = () => {
           <Button variant="secondary" onClick={() => setShowVariantModal(false)}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSaveVariant}>
+          <Button
+            variant="primary"
+            onClick={() => {
+              void handleSaveVariant();
+            }}
+          >
             {editingVariant ? 'Update Variant' : 'Add Variant'}
           </Button>
         </Modal.Footer>

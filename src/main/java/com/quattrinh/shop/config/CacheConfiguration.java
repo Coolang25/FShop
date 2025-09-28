@@ -58,7 +58,6 @@ public class CacheConfiguration {
             createCache(cm, com.quattrinh.shop.domain.ProductAttribute.class.getName());
             createCache(cm, com.quattrinh.shop.domain.ProductAttributeValue.class.getName());
             createCache(cm, com.quattrinh.shop.domain.ProductVariant.class.getName());
-            createCache(cm, com.quattrinh.shop.domain.VariantAttributeValue.class.getName());
             createCache(cm, com.quattrinh.shop.domain.ProductReview.class.getName());
             createCache(cm, com.quattrinh.shop.domain.Cart.class.getName());
             createCache(cm, com.quattrinh.shop.domain.CartItem.class.getName());

@@ -10,10 +10,7 @@
         Added the entity VariantAttributeValue.
     -->
     <changeSet id="20250907024803-1" author="quattt">
-        <createTable tableName="variant_attribute_values">
-            <column name="id" type="bigint" autoIncrement="true">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
+        <createTable tableName="product_variants__product_attribute_values">
             <column name="variant_id" type="bigint">
                 <constraints nullable="true" />
             </column>
@@ -22,5 +19,6 @@
             </column>
             <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here -->
         </createTable>
+        <addPrimaryKey columnNames="variant_id, attribute_value_id" tableName="product_variants__product_attribute_values"/>
     </changeSet>
 </databaseChangeLog>

@@ -29,8 +29,12 @@ export const getEntities = createAsyncThunk(
 
 export const getEntitiesWithVariants = createAsyncThunk(
   'product/fetch_entity_list_with_variants',
-  async ({ page, size, sort }: IQueryParams) => {
-    const requestUrl = `${apiUrl}/with-variants?${sort ? `page=${page}&size=${size}&sort=${sort}&` : ''}cacheBuster=${new Date().getTime()}`;
+  async ({ page, size, sort, search }: IQueryParams) => {
+    let requestUrl = `${apiUrl}/with-variants?page=${page}&size=${size}&sort=${sort}`;
+    if (search) {
+      requestUrl += `&search=${encodeURIComponent(search)}`;
+    }
+    requestUrl += `&cacheBuster=${new Date().getTime()}`;
     return axios.get<IProduct[]>(requestUrl);
   },
   { serializeError: serializeAxiosError },

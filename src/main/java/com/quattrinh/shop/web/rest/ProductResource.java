@@ -175,12 +175,16 @@ public class ProductResource {
      * {@code GET  /products/with-variants} : get all the products with their variants.
      *
      * @param pageable the pagination information.
+     * @param search the search term for filtering products by name or description.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of products with variants in body.
      */
     @GetMapping("/with-variants")
-    public ResponseEntity<List<ProductDTO>> getAllProductsWithVariants(@org.springdoc.core.annotations.ParameterObject Pageable pageable) {
-        LOG.debug("REST request to get Products with variants");
-        Page<ProductDTO> page = productService.findAllWithEagerRelationships(pageable);
+    public ResponseEntity<List<ProductDTO>> getAllProductsWithVariants(
+        @org.springdoc.core.annotations.ParameterObject Pageable pageable,
+        @RequestParam(required = false) String search
+    ) {
+        LOG.debug("REST request to get Products with variants, search: {}", search);
+        Page<ProductDTO> page = productService.findAllWithEagerRelationships(pageable, search);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }

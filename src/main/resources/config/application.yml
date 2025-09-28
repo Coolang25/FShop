@@ -93,9 +93,9 @@ springdoc:
 spring:
   application:
     name: FShop
-  docker:
-    compose:
-      enabled: false
+  #  docker:
+  #    compose:
+  #      enabled: false
   #      lifecycle-management: start-only
   #      file: src/main/docker/services.yml
   servlet:

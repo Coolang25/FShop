@@ -271,6 +271,9 @@ const ProductManagement = () => {
       categories: [],
       isActive: true,
     });
+    // Reset upload state to clear any previous image
+    dispatch(clearUploadedUrl());
+    dispatch(resetUpload());
     setShowModal(true);
   };
 
@@ -284,10 +287,13 @@ const ProductManagement = () => {
       categories: product.categories?.map(cat => cat.id) || [],
       isActive: product.isActive || true,
     });
+    // Reset upload state to clear any previous image
+    dispatch(clearUploadedUrl());
+    dispatch(resetUpload());
     setShowModal(true);
   };
 
-  const handleSaveProduct = () => {
+  const handleSaveProduct = async () => {
     const productData = {
       name: formData.name,
       description: formData.description,
@@ -296,14 +302,20 @@ const ProductManagement = () => {
       categories: formData.categories.map(catId => ({ id: catId })),
     };
 
+    let result;
     if (editingProduct) {
-      dispatch(updateProduct({ ...productData, id: editingProduct.id }));
+      result = await dispatch(updateProduct({ ...productData, id: editingProduct.id }));
     } else {
-      dispatch(createProduct(productData));
+      result = await dispatch(createProduct(productData));
+    }
+
+    // Check if the operation was successful
+    if (createProduct.fulfilled.match(result) || updateProduct.fulfilled.match(result)) {
+      // Refresh the products with current pagination and search
+      await dispatch(getProductsWithVariants({ page: currentPage, size: 10, sort: 'id,asc', search: searchTerm }));
     }
 
     setShowModal(false);
-    // Products will be refreshed automatically via Redux
   };
 
   const handleDeleteProduct = (product: Product) => {
@@ -311,15 +323,27 @@ const ProductManagement = () => {
     setShowDeleteModal(true);
   };
 
-  const handleActivateProduct = (product: Product) => {
+  const handleActivateProduct = async (product: Product) => {
     if (product.id) {
-      dispatch(activateProduct(product.id));
+      const result = await dispatch(activateProduct(product.id));
+
+      // Check if the operation was successful
+      if (activateProduct.fulfilled.match(result)) {
+        // Refresh the products with current pagination and search
+        await dispatch(getProductsWithVariants({ page: currentPage, size: 10, sort: 'id,asc', search: searchTerm }));
+      }
     }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (productToDelete?.id) {
-      dispatch(deleteProduct(productToDelete.id));
+      const result = await dispatch(deleteProduct(productToDelete.id));
+
+      // Check if the operation was successful
+      if (deleteProduct.fulfilled.match(result)) {
+        // Refresh the products with current pagination and search
+        await dispatch(getProductsWithVariants({ page: currentPage, size: 10, sort: 'id,asc', search: searchTerm }));
+      }
     }
     setShowDeleteModal(false);
     setProductToDelete(null);
@@ -412,6 +436,9 @@ const ProductManagement = () => {
       isActive: true,
       attributeValues: {},
     });
+    // Reset upload state to clear any previous image
+    dispatch(clearUploadedUrl());
+    dispatch(resetUpload());
     setShowVariantModal(true);
   };
 
@@ -439,6 +466,9 @@ const ProductManagement = () => {
       isActive: variant.isActive ?? true,
       attributeValues: attributeValuesForm,
     });
+    // Reset upload state to clear any previous image
+    dispatch(clearUploadedUrl());
+    dispatch(resetUpload());
     setShowVariantModal(true);
   };
 
@@ -649,7 +679,14 @@ const ProductManagement = () => {
                             <FaEdit />
                           </Button>
                           {product.isActive === false ? (
-                            <Button variant="outline-success" size="sm" title="Activate" onClick={() => handleActivateProduct(product)}>
+                            <Button
+                              variant="outline-success"
+                              size="sm"
+                              title="Activate"
+                              onClick={() => {
+                                void handleActivateProduct(product);
+                              }}
+                            >
                               <FaCheck />
                             </Button>
                           ) : (
@@ -819,7 +856,15 @@ const ProductManagement = () => {
       )}
 
       {/* Add/Edit Product Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
+      <Modal
+        show={showModal}
+        onHide={() => {
+          setShowModal(false);
+          dispatch(clearUploadedUrl());
+          dispatch(resetUpload());
+        }}
+        size="lg"
+      >
         <Modal.Header closeButton>
           <Modal.Title>{editingProduct ? 'Edit sản phẩm' : 'Add Product mới'}</Modal.Title>
         </Modal.Header>
@@ -969,17 +1014,37 @@ const ProductManagement = () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowModal(false);
+              dispatch(clearUploadedUrl());
+              dispatch(resetUpload());
+            }}
+          >
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSaveProduct}>
+          <Button
+            variant="primary"
+            onClick={() => {
+              void handleSaveProduct();
+            }}
+          >
             {editingProduct ? 'Update' : 'Add New'}
           </Button>
         </Modal.Footer>
       </Modal>
 
       {/* Add/Edit Variant Modal */}
-      <Modal show={showVariantModal} onHide={() => setShowVariantModal(false)} size="lg">
+      <Modal
+        show={showVariantModal}
+        onHide={() => {
+          setShowVariantModal(false);
+          dispatch(clearUploadedUrl());
+          dispatch(resetUpload());
+        }}
+        size="lg"
+      >
         <Modal.Header closeButton>
           <Modal.Title>
             {editingVariant ? 'Edit Variant' : 'Add Variant'}
@@ -1174,7 +1239,14 @@ const ProductManagement = () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowVariantModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowVariantModal(false);
+              dispatch(clearUploadedUrl());
+              dispatch(resetUpload());
+            }}
+          >
             Cancel
           </Button>
           <Button
@@ -1241,7 +1313,12 @@ const ProductManagement = () => {
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={confirmDelete}>
+          <Button
+            variant="danger"
+            onClick={() => {
+              void confirmDelete();
+            }}
+          >
             Delete
           </Button>
         </Modal.Footer>

@@ -2,9 +2,7 @@ package com.quattrinh.shop.service.dto;
 
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * A DTO for the {@link com.quattrinh.shop.domain.Category} entity.
@@ -21,6 +19,8 @@ public class CategoryDTO implements Serializable {
     private String image;
 
     private Long parentId;
+
+    private Long productCount;
 
     public Long getId() {
         return id;
@@ -52,6 +52,14 @@ public class CategoryDTO implements Serializable {
 
     public void setParentId(Long parentId) {
         this.parentId = parentId;
+    }
+
+    public Long getProductCount() {
+        return productCount;
+    }
+
+    public void setProductCount(Long productCount) {
+        this.productCount = productCount;
     }
 
     @Override

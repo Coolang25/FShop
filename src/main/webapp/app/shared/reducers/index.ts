@@ -13,6 +13,7 @@ import applicationProfile from './application-profile';
 import authentication from './authentication';
 import locale from './locale';
 import upload from './upload.reducer';
+import homeProducts from './home-products.reducer';
 /* jhipster-needle-add-reducer-import - JHipster will add reducer here */
 
 const rootReducer: ReducersMapObject = {
@@ -20,6 +21,7 @@ const rootReducer: ReducersMapObject = {
   locale,
   applicationProfile,
   upload,
+  homeProducts,
   administration,
   userManagement,
   register,

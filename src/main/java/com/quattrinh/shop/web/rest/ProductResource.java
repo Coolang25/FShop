@@ -11,6 +11,7 @@ import jakarta.validation.constraints.NotNull;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -190,6 +191,70 @@ public class ProductResource {
     }
 
     /**
+     * {@code GET  /products/featured} : get featured products for home page.
+     *
+     * @param limit the number of products to return (default: 8).
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of featured products in body.
+     */
+    @GetMapping("/featured")
+    public ResponseEntity<List<ProductDTO>> getFeaturedProducts(@RequestParam(defaultValue = "8") int limit) {
+        LOG.debug("REST request to get Featured Products, limit: {}", limit);
+        List<ProductDTO> featuredProducts = productService.findFeaturedProducts(limit);
+        return ResponseEntity.ok().body(featuredProducts);
+    }
+
+    /**
+     * {@code GET  /products/new} : get new products for home page.
+     *
+     * @param limit the number of products to return (default: 3).
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of new products in body.
+     */
+    @GetMapping("/new")
+    public ResponseEntity<List<ProductDTO>> getNewProducts(@RequestParam(defaultValue = "3") int limit) {
+        LOG.debug("REST request to get New Products, limit: {}", limit);
+        List<ProductDTO> newProducts = productService.findNewProducts(limit);
+        return ResponseEntity.ok().body(newProducts);
+    }
+
+    /**
+     * {@code GET  /products/trend} : get trend products for home page.
+     *
+     * @param limit the number of products to return (default: 3).
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of trend products in body.
+     */
+    @GetMapping("/trend")
+    public ResponseEntity<List<ProductDTO>> getTrendProducts(@RequestParam(defaultValue = "3") int limit) {
+        LOG.debug("REST request to get Trend Products, limit: {}", limit);
+        List<ProductDTO> trendProducts = productService.findTrendProducts(limit);
+        return ResponseEntity.ok().body(trendProducts);
+    }
+
+    /**
+     * {@code GET  /products/best-seller} : get best seller products for home page.
+     *
+     * @param limit the number of products to return (default: 3).
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of best seller products in body.
+     */
+    @GetMapping("/best-seller")
+    public ResponseEntity<List<ProductDTO>> getBestSellerProducts(@RequestParam(defaultValue = "3") int limit) {
+        LOG.debug("REST request to get Best Seller Products, limit: {}", limit);
+        List<ProductDTO> bestSellerProducts = productService.findBestSellerProducts(limit);
+        return ResponseEntity.ok().body(bestSellerProducts);
+    }
+
+    /**
+     * {@code GET  /products/stats} : get product statistics for home page.
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the product statistics in body.
+     */
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getProductStats() {
+        LOG.debug("REST request to get Product Statistics");
+        Map<String, Object> stats = productService.getProductStats();
+        return ResponseEntity.ok().body(stats);
+    }
+
+    /**
      * {@code GET  /products/:id} : get the "id" product.
      *
      * @param id the id of the productDTO to retrieve.
@@ -200,6 +265,22 @@ public class ProductResource {
         LOG.debug("REST request to get Product : {}", id);
         Optional<ProductDTO> productDTO = productService.findOne(id);
         return ResponseUtil.wrapOrNotFound(productDTO);
+    }
+
+    /**
+     * {@code GET  /products/:id/detail} : get the "id" product with variants, attributes and images for detail page.
+     *
+     * @param id the id of the product to retrieve with full details.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the product detail, or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<Map<String, Object>> getProductDetail(@PathVariable("id") Long id) {
+        LOG.debug("REST request to get Product Detail : {}", id);
+        Map<String, Object> productDetail = productService.getProductDetail(id);
+        if (productDetail == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok().body(productDetail);
     }
 
     /**

@@ -47,6 +47,7 @@ public class ProductReviewQueryService extends QueryService<ProductReview> {
     public Page<ProductReviewDTO> findByCriteria(ProductReviewCriteria criteria, Pageable page) {
         LOG.debug("find by criteria : {}, page: {}", criteria, page);
         final Specification<ProductReview> specification = createSpecification(criteria);
+        Page<ProductReview> test = productReviewRepository.findAll(specification, page);
         return productReviewRepository.findAll(specification, page).map(productReviewMapper::toDto);
     }
 

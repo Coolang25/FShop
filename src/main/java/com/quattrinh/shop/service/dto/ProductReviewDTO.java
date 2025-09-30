@@ -1,6 +1,5 @@
 package com.quattrinh.shop.service.dto;
 
-import jakarta.persistence.Lob;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.time.Instant;

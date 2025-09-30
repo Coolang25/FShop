@@ -1,6 +1,7 @@
 package com.quattrinh.shop.repository;
 
 import com.quattrinh.shop.domain.Category;
+import java.util.List;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
@@ -9,4 +10,11 @@ import org.springframework.stereotype.Repository;
  */
 @SuppressWarnings("unused")
 @Repository
-public interface CategoryRepository extends JpaRepository<Category, Long>, JpaSpecificationExecutor<Category> {}
+public interface CategoryRepository extends JpaRepository<Category, Long>, JpaSpecificationExecutor<Category> {
+    /**
+     * Find all categories that have no parent category (root categories).
+     *
+     * @return list of parent categories
+     */
+    List<Category> findByParentCategoryIsNull();
+}

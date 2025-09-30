@@ -4,7 +4,9 @@ import com.quattrinh.shop.domain.Category;
 import com.quattrinh.shop.repository.CategoryRepository;
 import com.quattrinh.shop.service.dto.CategoryDTO;
 import com.quattrinh.shop.service.mapper.CategoryMapper;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -108,5 +110,43 @@ public class CategoryService {
     public void delete(Long id) {
         LOG.debug("Request to delete Category : {}", id);
         categoryRepository.deleteById(id);
+    }
+
+    /**
+     * Get all parent categories (categories without parent) with product counts.
+     *
+     * @return the list of parent categories.
+     */
+    @Transactional(readOnly = true)
+    public List<CategoryDTO> findParentCategories() {
+        LOG.debug("Request to get Parent Categories");
+        List<Category> parentCategories = categoryRepository.findByParentCategoryIsNull();
+        return parentCategories
+            .stream()
+            .map(category -> {
+                CategoryDTO dto = categoryMapper.toDto(category);
+                // Count products in this category and all its subcategories
+                long productCount = countProductsInCategory(category);
+                dto.setProductCount(productCount);
+                return dto;
+            })
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Count products in a category and all its subcategories recursively.
+     *
+     * @param category the category to count products for.
+     * @return the total product count.
+     */
+    private long countProductsInCategory(Category category) {
+        long count = category.getProducts().size();
+
+        // Add products from subcategories
+        for (Category subCategory : category.getSubCategories()) {
+            count += countProductsInCategory(subCategory);
+        }
+
+        return count;
     }
 }

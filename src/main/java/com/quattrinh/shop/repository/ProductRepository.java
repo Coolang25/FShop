@@ -42,4 +42,17 @@ public interface ProductRepository
         "SELECT p FROM Product p WHERE p.isActive = true AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')))"
     )
     Page<Product> findAllActiveWithSearch(Pageable pageable, String search);
+
+    // New methods for home page product filtering (separate from admin APIs)
+    @Query("SELECT p FROM Product p WHERE p.isActive = true ORDER BY p.id DESC")
+    Page<Product> findNewProducts(Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE p.isActive = true ORDER BY p.id ASC")
+    Page<Product> findBestSellerProducts(Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE p.isActive = true ORDER BY p.id DESC")
+    Page<Product> findTrendProducts(Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE p.isActive = true ORDER BY p.id ASC")
+    Page<Product> findFeaturedProducts(Pageable pageable);
 }

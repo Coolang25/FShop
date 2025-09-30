@@ -1,8 +1,29 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Accordion } from 'react-bootstrap';
+import { useAppDispatch, useAppSelector } from 'app/config/store';
+import { getEntities as getCategories } from 'app/entities/category/category.reducer';
 import PriceRangeFilter from '../../ui/price-range-filter';
 
 const ShopSidebar: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const categories = useAppSelector(state => state.category.entities);
+  const loading = useAppSelector(state => state.category.loading);
+
+  useEffect(() => {
+    dispatch(getCategories({ page: 0, size: 20, sort: 'id,asc' }));
+  }, [dispatch]);
+
+  // Fallback categories nếu chưa có dữ liệu từ API
+  const fallbackCategories = [
+    { id: 1, name: 'Women', subCategories: ['Coats', 'Jackets', 'Dresses', 'Shirts', 'T-shirts', 'Jeans'] },
+    { id: 2, name: 'Men', subCategories: ['Coats', 'Jackets', 'Shirts', 'T-shirts', 'Jeans', 'Suits'] },
+    { id: 3, name: 'Kids', subCategories: ['Coats', 'Jackets', 'Dresses', 'Shirts', 'T-shirts', 'Jeans'] },
+    { id: 4, name: 'Accessories', subCategories: ['Bags', 'Shoes', 'Jewelry', 'Watches', 'Belts', 'Hats'] },
+    { id: 5, name: 'Cosmetic', subCategories: ['Makeup', 'Skincare', 'Hair Care', 'Fragrance', 'Tools', 'Bath & Body'] },
+  ];
+
+  const displayCategories = categories.length > 0 ? categories : fallbackCategories;
+
   return (
     <div className="shop__sidebar">
       {/* Categories */}
@@ -11,35 +32,43 @@ const ShopSidebar: React.FC = () => {
           <h4>Categories</h4>
         </div>
         <div className="categories__accordion">
-          <Accordion defaultActiveKey="0">
-            {['Women', 'Men', 'Kids', 'Accessories', 'Cosmetic'].map((cat, i) => (
-              <Accordion.Item eventKey={i.toString()} key={cat}>
-                <Accordion.Header>{cat}</Accordion.Header>
-                <Accordion.Body className="card-body">
-                  <ul>
-                    <li>
-                      <a href="#">Coats</a>
-                    </li>
-                    <li>
-                      <a href="#">Jackets</a>
-                    </li>
-                    <li>
-                      <a href="#">Dresses</a>
-                    </li>
-                    <li>
-                      <a href="#">Shirts</a>
-                    </li>
-                    <li>
-                      <a href="#">T-shirts</a>
-                    </li>
-                    <li>
-                      <a href="#">Jeans</a>
-                    </li>
-                  </ul>
-                </Accordion.Body>
-              </Accordion.Item>
-            ))}
-          </Accordion>
+          {loading ? (
+            <div className="text-center">
+              <div className="spinner-border spinner-border-sm" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : (
+            <Accordion defaultActiveKey="0">
+              {displayCategories.map((category, i) => (
+                <Accordion.Item eventKey={i.toString()} key={category.id}>
+                  <Accordion.Header>{category.name}</Accordion.Header>
+                  <Accordion.Body className="card-body">
+                    <ul>
+                      {category.subCategories?.map((subCat, subIndex) => (
+                        <li key={subIndex}>
+                          <a href={`/shop?category=${category.id}&subcategory=${subCat}`}>{subCat}</a>
+                        </li>
+                      )) || (
+                        // Fallback subcategories nếu không có dữ liệu
+                        <>
+                          <li>
+                            <a href={`/shop?category=${category.id}`}>All {category.name}</a>
+                          </li>
+                          <li>
+                            <a href={`/shop?category=${category.id}`}>New Arrivals</a>
+                          </li>
+                          <li>
+                            <a href={`/shop?category=${category.id}`}>Best Sellers</a>
+                          </li>
+                        </>
+                      )}
+                    </ul>
+                  </Accordion.Body>
+                </Accordion.Item>
+              ))}
+            </Accordion>
+          )}
         </div>
       </div>
 

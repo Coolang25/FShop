@@ -181,6 +181,18 @@ public class CategoryResource {
     }
 
     /**
+     * {@code GET  /categories/parent} : get all parent categories with product counts.
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of parent categories in body.
+     */
+    @GetMapping("/parent")
+    public ResponseEntity<List<CategoryDTO>> getParentCategories() {
+        LOG.debug("REST request to get Parent Categories");
+        List<CategoryDTO> parentCategories = categoryService.findParentCategories();
+        return ResponseEntity.ok().body(parentCategories);
+    }
+
+    /**
      * {@code GET  /categories/count} : count all the categories.
      *
      * @param criteria the criteria which the requested entities should match.

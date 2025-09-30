@@ -7,14 +7,15 @@ interface ProductItemProps {
   categories: string;
   isSale?: boolean;
   oldPrice?: string;
+  label?: string;
 }
 
-const ProductItem: React.FC<ProductItemProps> = ({ title, price, oldPrice, image, categories, isSale }) => {
+const ProductItem: React.FC<ProductItemProps> = ({ title, price, oldPrice, image, categories, isSale, label }) => {
   return (
     <div className={`col-lg-3 col-md-4 col-sm-6 mix ${categories}`}>
       <div className={`product__item ${isSale ? 'sale' : ''}`}>
         <div className="product__item__pic set-bg" style={{ backgroundImage: `url(${image})` }}>
-          {isSale && <div className="label sale">Sale</div>}
+          {(label || isSale) && <div className={`label ${(label || 'sale').toLowerCase()}`}>{label || 'Sale'}</div>}
           <ul className="product__hover">
             <li>
               <a href={image} className="image-popup">

@@ -101,6 +101,42 @@ export const activateEntity = createAsyncThunk(
   { serializeError: serializeAxiosError },
 );
 
+export const getFeaturedProducts = createAsyncThunk(
+  'product/fetch_featured_products',
+  async (limit: number = 8) => {
+    const requestUrl = `${apiUrl}/featured?limit=${limit}`;
+    return axios.get<IProduct[]>(requestUrl);
+  },
+  { serializeError: serializeAxiosError },
+);
+
+export const getNewProducts = createAsyncThunk(
+  'product/fetch_new_products',
+  async (limit: number = 3) => {
+    const requestUrl = `${apiUrl}/new?limit=${limit}`;
+    return axios.get<IProduct[]>(requestUrl);
+  },
+  { serializeError: serializeAxiosError },
+);
+
+export const getTrendProducts = createAsyncThunk(
+  'product/fetch_trend_products',
+  async (limit: number = 3) => {
+    const requestUrl = `${apiUrl}/trend?limit=${limit}`;
+    return axios.get<IProduct[]>(requestUrl);
+  },
+  { serializeError: serializeAxiosError },
+);
+
+export const getBestSellerProducts = createAsyncThunk(
+  'product/fetch_best_seller_products',
+  async (limit: number = 3) => {
+    const requestUrl = `${apiUrl}/best-seller?limit=${limit}`;
+    return axios.get<IProduct[]>(requestUrl);
+  },
+  { serializeError: serializeAxiosError },
+);
+
 // slice
 
 export const ProductSlice = createEntitySlice({
@@ -132,17 +168,38 @@ export const ProductSlice = createEntitySlice({
           totalItems: parseInt(headers['x-total-count'], 10),
         };
       })
+      .addMatcher(isFulfilled(getFeaturedProducts, getNewProducts, getTrendProducts, getBestSellerProducts), (state, action) => {
+        const { data } = action.payload;
+
+        return {
+          ...state,
+          loading: false,
+          entities: data,
+          totalItems: data.length,
+        };
+      })
       .addMatcher(isFulfilled(createEntity, updateEntity, partialUpdateEntity), (state, action) => {
         state.updating = false;
         state.loading = false;
         state.updateSuccess = true;
         state.entity = action.payload.data;
       })
-      .addMatcher(isPending(getEntities, getEntitiesWithVariants, getEntity), state => {
-        state.errorMessage = null;
-        state.updateSuccess = false;
-        state.loading = true;
-      })
+      .addMatcher(
+        isPending(
+          getEntities,
+          getEntitiesWithVariants,
+          getEntity,
+          getFeaturedProducts,
+          getNewProducts,
+          getTrendProducts,
+          getBestSellerProducts,
+        ),
+        state => {
+          state.errorMessage = null;
+          state.updateSuccess = false;
+          state.loading = true;
+        },
+      )
       .addMatcher(isPending(createEntity, updateEntity, partialUpdateEntity, deleteEntity, activateEntity), state => {
         state.errorMessage = null;
         state.updateSuccess = false;

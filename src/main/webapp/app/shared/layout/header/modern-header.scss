@@ -1,0 +1,39 @@
+// Modern Header Styles
+.nav-link-custom {
+  font-weight: 500;
+  color: #2c3e50 !important;
+  margin: 0 10px;
+  transition: color 0.3s ease;
+}
+
+.nav-link-custom:hover {
+  color: #667eea !important;
+}
+
+.action-btn {
+  position: relative;
+  padding: 8px 12px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+  background-color: #f8f9fa;
+  color: #667eea !important;
+}
+
+.category-link {
+  color: #6c757d;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.category-link:hover {
+  color: #667eea;
+}
+
+.search-form .form-control:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}

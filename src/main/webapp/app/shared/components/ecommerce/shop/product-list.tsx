@@ -1,36 +1,77 @@
-import React from 'react';
-import { Row, Col } from 'react-bootstrap';
+import React, { useEffect, useState } from 'react';
+import { Row, Col, Pagination } from 'react-bootstrap';
+import { useAppDispatch, useAppSelector } from 'app/config/store';
+import { getEntitiesWithVariants as getProducts } from 'app/entities/product/product.reducer';
 import ProductItem from './product-item';
 
-const products = [
-  { image: 'content/img/shop/shop-1.jpg', title: 'Furry hooded parka', price: '$59.0', label: 'New' },
-  { image: 'content/img/shop/shop-2.jpg', title: 'Flowy striped skirt', price: '$49.0' },
-  { image: 'content/img/shop/shop-3.jpg', title: 'Croc-effect bag', price: '$59.0' },
-  { image: 'content/img/shop/shop-4.jpg', title: 'Dark wash Xavi jeans', price: '$59.0' },
-  { image: 'content/img/shop/shop-5.jpg', title: 'Ankle-cuff sandals', price: '$49.0', oldPrice: '$59.0', label: 'Sale' },
-  { image: 'content/img/shop/shop-6.jpg', title: 'Contrasting sunglasses', price: '$59.0' },
-  { image: 'content/img/shop/shop-7.jpg', title: 'Circular pendant earrings', price: '$59.0' },
-  { image: 'content/img/shop/shop-8.jpg', title: 'Cotton T-Shirt', price: '$59.0', label: 'Out Of Stock' },
-  { image: 'content/img/shop/shop-9.jpg', title: 'Water resistant zips backpack', price: '$49.0', oldPrice: '$59.0', label: 'Sale' },
-];
-
 const ProductList: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const products = useAppSelector(state => state.product.entities);
+  const loading = useAppSelector(state => state.product.loading);
+  const totalItems = useAppSelector(state => state.product.totalItems) || 0;
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const [itemsPerPage] = useState(9);
+
+  useEffect(() => {
+    dispatch(getProducts({ page: currentPage, size: itemsPerPage, sort: 'id,asc' }));
+  }, [dispatch, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page - 1); // API sử dụng 0-based indexing
+  };
+
+  if (loading) {
+    return (
+      <Row>
+        <Col lg={12} className="text-center">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </Col>
+      </Row>
+    );
+  }
+
   return (
     <Row>
-      {products.map((p, idx) => (
-        <ProductItem key={idx} {...p} />
-      ))}
+      {products.map((product, idx) => {
+        const categoryNames = product.categories?.map(cat => cat.name).join(' ') || 'general';
+        const isSale = product.isSale || (product.oldPrice && product.oldPrice > product.basePrice);
+        const label = isSale ? 'Sale' : product.isActive === false ? 'Out Of Stock' : undefined;
 
-      <Col lg={12} className="text-center">
-        <div className="pagination__option">
-          <a href="#">1</a>
-          <a href="#">2</a>
-          <a href="#">3</a>
-          <a href="#">
-            <i className="fa fa-angle-right"></i>
-          </a>
-        </div>
-      </Col>
+        return (
+          <ProductItem
+            key={product.id || idx}
+            title={product.name || 'Product'}
+            price={`$${product.basePrice || 0}`}
+            oldPrice={product.oldPrice ? `$${product.oldPrice}` : undefined}
+            image={product.imageUrl || `content/img/shop/shop-${(idx % 9) + 1}.jpg`}
+            label={label}
+            isSale={isSale}
+          />
+        );
+      })}
+
+      {totalPages > 1 && (
+        <Col lg={12} className="text-center">
+          <div className="pagination__option">
+            <Pagination>
+              <Pagination.Prev disabled={currentPage === 0} onClick={() => handlePageChange(currentPage)} />
+
+              {Array.from({ length: totalPages }, (_, i) => (
+                <Pagination.Item key={i + 1} active={i === currentPage} onClick={() => handlePageChange(i + 1)}>
+                  {i + 1}
+                </Pagination.Item>
+              ))}
+
+              <Pagination.Next disabled={currentPage === totalPages - 1} onClick={() => handlePageChange(currentPage + 2)} />
+            </Pagination>
+          </div>
+        </Col>
+      )}
     </Row>
   );
 };

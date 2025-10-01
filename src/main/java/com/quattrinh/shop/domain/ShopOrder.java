@@ -17,7 +17,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 @Table(name = "shop_orders")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
-public class ShopOrder implements Serializable {
+public class ShopOrder extends AbstractAuditingEntity<Long> {
 
     private static final long serialVersionUID = 1L;
 
@@ -52,6 +52,10 @@ public class ShopOrder implements Serializable {
     @JsonIgnoreProperties(value = { "order" }, allowSetters = true)
     @OneToOne(fetch = FetchType.LAZY, mappedBy = "order")
     private Payment payment;
+
+    @JsonIgnoreProperties(value = { "order" }, allowSetters = true)
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private java.util.List<OrderItem> orderItems = new java.util.ArrayList<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -162,6 +166,39 @@ public class ShopOrder implements Serializable {
 
     public ShopOrder payment(Payment payment) {
         this.setPayment(payment);
+        return this;
+    }
+
+    public java.util.List<OrderItem> getOrderItems() {
+        return this.orderItems;
+    }
+
+    public void setOrderItems(java.util.List<OrderItem> orderItems) {
+        if (this.orderItems != null) {
+            this.orderItems.forEach(i -> i.setOrder(null));
+        }
+        if (orderItems != null) {
+            orderItems.forEach(i -> i.setOrder(this));
+        }
+        this.orderItems = orderItems;
+    }
+
+    public ShopOrder orderItems(java.util.List<OrderItem> orderItems) {
+        this.setOrderItems(orderItems);
+        return this;
+    }
+
+    public ShopOrder addOrderItem(OrderItem orderItem) {
+        this.orderItems.add(orderItem);
+        orderItem.setOrder(this);
+        return this;
+    }
+
+    public ShopOrder removeOrderItem(OrderItem orderItem) {
+        if (this.orderItems != null) {
+            this.orderItems.remove(orderItem);
+        }
+        orderItem.setOrder(null);
         return this;
     }
 

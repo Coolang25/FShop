@@ -1,9 +1,7 @@
 package com.quattrinh.shop.web.rest;
 
 import com.quattrinh.shop.repository.ShopOrderRepository;
-import com.quattrinh.shop.service.ShopOrderQueryService;
 import com.quattrinh.shop.service.ShopOrderService;
-import com.quattrinh.shop.service.criteria.ShopOrderCriteria;
 import com.quattrinh.shop.service.dto.ShopOrderDTO;
 import com.quattrinh.shop.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
@@ -33,7 +31,7 @@ import tech.jhipster.web.util.ResponseUtil;
 @RequestMapping("/api/shop-orders")
 public class ShopOrderResource {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ShopOrderResource.class);
+    private final Logger log = LoggerFactory.getLogger(ShopOrderResource.class);
 
     private static final String ENTITY_NAME = "shopOrder";
 
@@ -44,35 +42,28 @@ public class ShopOrderResource {
 
     private final ShopOrderRepository shopOrderRepository;
 
-    private final ShopOrderQueryService shopOrderQueryService;
-
-    public ShopOrderResource(
-        ShopOrderService shopOrderService,
-        ShopOrderRepository shopOrderRepository,
-        ShopOrderQueryService shopOrderQueryService
-    ) {
+    public ShopOrderResource(ShopOrderService shopOrderService, ShopOrderRepository shopOrderRepository) {
         this.shopOrderService = shopOrderService;
         this.shopOrderRepository = shopOrderRepository;
-        this.shopOrderQueryService = shopOrderQueryService;
     }
 
     /**
      * {@code POST  /shop-orders} : Create a new shopOrder.
      *
      * @param shopOrderDTO the shopOrderDTO to create.
-     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new shopOrderDTO, or with status {@code 400 (Bad Request)} if the shopOrder has already an ID.
+     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new shopOrderDTO, or with status {@code 400 (Bad Request)} if the shopOrder has an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("")
     public ResponseEntity<ShopOrderDTO> createShopOrder(@Valid @RequestBody ShopOrderDTO shopOrderDTO) throws URISyntaxException {
-        LOG.debug("REST request to save ShopOrder : {}", shopOrderDTO);
+        log.debug("REST request to save ShopOrder : {}", shopOrderDTO);
         if (shopOrderDTO.getId() != null) {
             throw new BadRequestAlertException("A new shopOrder cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        shopOrderDTO = shopOrderService.save(shopOrderDTO);
-        return ResponseEntity.created(new URI("/api/shop-orders/" + shopOrderDTO.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, shopOrderDTO.getId().toString()))
-            .body(shopOrderDTO);
+        ShopOrderDTO result = shopOrderService.save(shopOrderDTO);
+        return ResponseEntity.created(new URI("/api/shop-orders/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .body(result);
     }
 
     /**
@@ -90,7 +81,7 @@ public class ShopOrderResource {
         @PathVariable(value = "id", required = false) final Long id,
         @Valid @RequestBody ShopOrderDTO shopOrderDTO
     ) throws URISyntaxException {
-        LOG.debug("REST request to update ShopOrder : {}, {}", id, shopOrderDTO);
+        log.debug("REST request to update ShopOrder : {}, {}", id, shopOrderDTO);
         if (shopOrderDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
@@ -102,10 +93,10 @@ public class ShopOrderResource {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
-        shopOrderDTO = shopOrderService.update(shopOrderDTO);
+        ShopOrderDTO result = shopOrderService.update(shopOrderDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, shopOrderDTO.getId().toString()))
-            .body(shopOrderDTO);
+            .body(result);
     }
 
     /**
@@ -117,14 +108,13 @@ public class ShopOrderResource {
      * or with status {@code 400 (Bad Request)} if the shopOrderDTO is not valid,
      * or with status {@code 404 (Not Found)} if the shopOrderDTO is not found,
      * or with status {@code 500 (Internal Server Error)} if the shopOrderDTO couldn't be updated.
-     * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
     public ResponseEntity<ShopOrderDTO> partialUpdateShopOrder(
         @PathVariable(value = "id", required = false) final Long id,
         @NotNull @RequestBody ShopOrderDTO shopOrderDTO
     ) throws URISyntaxException {
-        LOG.debug("REST request to partial update ShopOrder partially : {}, {}", id, shopOrderDTO);
+        log.debug("REST request to partial update ShopOrder partially : {}, {}", id, shopOrderDTO);
         if (shopOrderDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
@@ -148,31 +138,35 @@ public class ShopOrderResource {
      * {@code GET  /shop-orders} : get all the shopOrders.
      *
      * @param pageable the pagination information.
-     * @param criteria the criteria which the requested entities should match.
+     * @param eagerload flag to eager load entities from relationships (This is applicable for many-to-many).
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of shopOrders in body.
      */
     @GetMapping("")
     public ResponseEntity<List<ShopOrderDTO>> getAllShopOrders(
-        ShopOrderCriteria criteria,
-        @org.springdoc.core.annotations.ParameterObject Pageable pageable
+        @org.springdoc.core.annotations.ParameterObject Pageable pageable,
+        @RequestParam(required = false, defaultValue = "false") boolean eagerload
     ) {
-        LOG.debug("REST request to get ShopOrders by criteria: {}", criteria);
-
-        Page<ShopOrderDTO> page = shopOrderQueryService.findByCriteria(criteria, pageable);
+        log.debug("REST request to get a page of ShopOrders");
+        Page<ShopOrderDTO> page;
+        if (eagerload) {
+            page = shopOrderService.findAllWithEagerRelationships(pageable);
+        } else {
+            page = shopOrderService.findAll(pageable);
+        }
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
 
     /**
-     * {@code GET  /shop-orders/count} : count all the shopOrders.
+     * {@code GET  /shop-orders/admin} : get all shopOrders for admin with eager relationships.
      *
-     * @param criteria the criteria which the requested entities should match.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of shopOrders in body.
      */
-    @GetMapping("/count")
-    public ResponseEntity<Long> countShopOrders(ShopOrderCriteria criteria) {
-        LOG.debug("REST request to count ShopOrders by criteria: {}", criteria);
-        return ResponseEntity.ok().body(shopOrderQueryService.countByCriteria(criteria));
+    @GetMapping("/admin")
+    public ResponseEntity<List<ShopOrderDTO>> getAllShopOrdersForAdmin() {
+        log.debug("REST request to get all ShopOrders for admin");
+        List<ShopOrderDTO> orders = shopOrderService.findAllForAdmin();
+        return ResponseEntity.ok().body(orders);
     }
 
     /**
@@ -182,9 +176,9 @@ public class ShopOrderResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the shopOrderDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ShopOrderDTO> getShopOrder(@PathVariable("id") Long id) {
-        LOG.debug("REST request to get ShopOrder : {}", id);
-        Optional<ShopOrderDTO> shopOrderDTO = shopOrderService.findOne(id);
+    public ResponseEntity<ShopOrderDTO> getShopOrder(@PathVariable Long id) {
+        log.debug("REST request to get ShopOrder : {}", id);
+        Optional<ShopOrderDTO> shopOrderDTO = shopOrderService.findOneWithOrderItems(id);
         return ResponseUtil.wrapOrNotFound(shopOrderDTO);
     }
 
@@ -192,14 +186,107 @@ public class ShopOrderResource {
      * {@code DELETE  /shop-orders/:id} : delete the "id" shopOrder.
      *
      * @param id the id of the shopOrderDTO to delete.
-     * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
+     * @return the {@link ResponseEntity} with status {@code 204 (No Content)}.
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteShopOrder(@PathVariable("id") Long id) {
-        LOG.debug("REST request to delete ShopOrder : {}", id);
+    public ResponseEntity<Void> deleteShopOrder(@PathVariable Long id) {
+        log.debug("REST request to delete ShopOrder : {}", id);
         shopOrderService.delete(id);
         return ResponseEntity.noContent()
             .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))
             .build();
+    }
+
+    /**
+     * {@code GET  /shop-orders/user/{userId} : get all orders for a specific user.
+     *
+     * @param userId the user ID to get orders for.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of shopOrders in body.
+     */
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<ShopOrderDTO>> getShopOrdersByUser(@PathVariable Long userId) {
+        log.debug("REST request to get ShopOrders for user : {}", userId);
+        List<ShopOrderDTO> orders = shopOrderService.findByUserId(userId);
+        return ResponseEntity.ok().body(orders);
+    }
+
+    /**
+     * {@code POST  /shop-orders/checkout} : Create a new order from checkout.
+     *
+     * @param checkoutRequest the checkout request data.
+     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new shopOrderDTO.
+     */
+    @PostMapping("/checkout")
+    public ResponseEntity<ShopOrderDTO> checkout(@RequestBody CheckoutRequest checkoutRequest) {
+        log.debug("REST request to checkout : {}", checkoutRequest);
+        try {
+            ShopOrderDTO result = shopOrderService.createOrderFromCheckout(checkoutRequest);
+            return ResponseEntity.ok().body(result);
+        } catch (Exception e) {
+            log.error("Error during checkout", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Checkout request DTO
+     */
+    public static class CheckoutRequest {
+
+        private Long userId;
+        private java.math.BigDecimal total;
+        private String shippingAddress;
+        private String paymentMethod;
+        private String paymentStatus;
+        private java.util.List<Long> selectedItemIds;
+
+        // Getters and setters
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
+        }
+
+        public java.math.BigDecimal getTotal() {
+            return total;
+        }
+
+        public void setTotal(java.math.BigDecimal total) {
+            this.total = total;
+        }
+
+        public String getShippingAddress() {
+            return shippingAddress;
+        }
+
+        public void setShippingAddress(String shippingAddress) {
+            this.shippingAddress = shippingAddress;
+        }
+
+        public String getPaymentMethod() {
+            return paymentMethod;
+        }
+
+        public void setPaymentMethod(String paymentMethod) {
+            this.paymentMethod = paymentMethod;
+        }
+
+        public String getPaymentStatus() {
+            return paymentStatus;
+        }
+
+        public void setPaymentStatus(String paymentStatus) {
+            this.paymentStatus = paymentStatus;
+        }
+
+        public java.util.List<Long> getSelectedItemIds() {
+            return selectedItemIds;
+        }
+
+        public void setSelectedItemIds(java.util.List<Long> selectedItemIds) {
+            this.selectedItemIds = selectedItemIds;
+        }
     }
 }

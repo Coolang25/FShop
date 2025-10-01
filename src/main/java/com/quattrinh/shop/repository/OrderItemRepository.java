@@ -14,6 +14,9 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface OrderItemRepository extends JpaRepository<OrderItem, Long>, JpaSpecificationExecutor<OrderItem> {
+    @Query("select orderItem from OrderItem orderItem where orderItem.order.user.login = ?#{authentication.name}")
+    List<OrderItem> findByOrderUserIsCurrentUser();
+
     default Optional<OrderItem> findOneWithEagerRelationships(Long id) {
         return this.findOneWithToOneRelationships(id);
     }
@@ -27,14 +30,19 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long>, Jpa
     }
 
     @Query(
-        value = "select orderItem from OrderItem orderItem left join fetch orderItem.variant",
+        value = "select orderItem from OrderItem orderItem left join fetch orderItem.order left join fetch orderItem.variant",
         countQuery = "select count(orderItem) from OrderItem orderItem"
     )
     Page<OrderItem> findAllWithToOneRelationships(Pageable pageable);
 
-    @Query("select orderItem from OrderItem orderItem left join fetch orderItem.variant")
+    @Query("select orderItem from OrderItem orderItem left join fetch orderItem.order left join fetch orderItem.variant")
     List<OrderItem> findAllWithToOneRelationships();
 
-    @Query("select orderItem from OrderItem orderItem left join fetch orderItem.variant where orderItem.id =:id")
+    @Query(
+        "select orderItem from OrderItem orderItem left join fetch orderItem.order left join fetch orderItem.variant where orderItem.id =:id"
+    )
     Optional<OrderItem> findOneWithToOneRelationships(@Param("id") Long id);
+
+    @Query("select orderItem from OrderItem orderItem where orderItem.order.id = :orderId")
+    List<OrderItem> findByOrderId(@Param("orderId") Long orderId);
 }

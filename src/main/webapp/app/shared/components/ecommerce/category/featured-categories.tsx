@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 interface CategoryWithCount {
@@ -11,8 +12,13 @@ interface CategoryWithCount {
 }
 
 const FeaturedCategories: React.FC = () => {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState<CategoryWithCount[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleCategoryClick = (categoryId: number) => {
+    navigate(`/shop?category=${categoryId}`);
+  };
 
   useEffect(() => {
     const fetchParentCategories = async () => {
@@ -119,6 +125,7 @@ const FeaturedCategories: React.FC = () => {
                   transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                   cursor: 'pointer',
                 }}
+                onClick={() => handleCategoryClick(category.id)}
                 onMouseEnter={e => {
                   e.currentTarget.style.transform = 'translateY(-5px)';
                   e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';

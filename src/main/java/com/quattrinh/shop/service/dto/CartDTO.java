@@ -2,6 +2,7 @@ package com.quattrinh.shop.service.dto;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -17,6 +18,8 @@ public class CartDTO implements Serializable {
     private Instant updatedAt;
 
     private UserDTO user;
+
+    private List<CartItemDTO> items;
 
     public Long getId() {
         return id;
@@ -48,6 +51,14 @@ public class CartDTO implements Serializable {
 
     public void setUser(UserDTO user) {
         this.user = user;
+    }
+
+    public List<CartItemDTO> getItems() {
+        return items;
+    }
+
+    public void setItems(List<CartItemDTO> items) {
+        this.items = items;
     }
 
     @Override

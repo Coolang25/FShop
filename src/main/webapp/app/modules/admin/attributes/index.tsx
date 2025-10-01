@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Form, Modal, InputGroup, Alert } from 'react-bootstrap';
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaCogs, FaTag, FaList, FaSave } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaSearch, FaCogs, FaTag, FaList, FaSave } from 'react-icons/fa';
 import { useAppDispatch, useAppSelector } from 'app/config/store';
 import {
   getEntitiesSimplified as getProductAttributesSimplified,
@@ -8,7 +8,6 @@ import {
   updateEntity as updateProductAttribute,
   createAttributeValue,
   updateAttributeValue,
-  deleteAttributeValue,
   AttributeWithValues,
   AttributeValue,
 } from 'app/entities/product-attribute/product-attribute.reducer';
@@ -34,8 +33,6 @@ const AttributeManagement = () => {
   const [selectedAttribute, setSelectedAttribute] = useState<AttributeWithValues | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<any>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [savingValue, setSavingValue] = useState(false);
 
@@ -183,19 +180,6 @@ const AttributeManagement = () => {
     setShowValueModal(false);
     setErrors({});
     setSavingValue(false);
-  };
-
-  const handleDeleteValue = (value: AttributeValue) => {
-    setItemToDelete(value);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDelete = () => {
-    if (itemToDelete) {
-      dispatch(deleteAttributeValue(itemToDelete.id));
-    }
-    setShowDeleteModal(false);
-    setItemToDelete(null);
   };
 
   const filteredAttributes = attributes.filter(
@@ -367,9 +351,6 @@ const AttributeManagement = () => {
                           <Button variant="outline-warning" size="sm" title="Edit" onClick={() => handleEditValue(value)}>
                             <FaEdit />
                           </Button>
-                          <Button variant="outline-danger" size="sm" title="Delete" onClick={() => handleDeleteValue(value)}>
-                            <FaTrash />
-                          </Button>
                         </div>
                       </div>
                     </div>
@@ -461,22 +442,6 @@ const AttributeManagement = () => {
           <Button variant="primary" onClick={() => void handleSaveValue()} disabled={savingValue}>
             <FaSave className="me-2" />
             {savingValue ? 'Saving...' : editingValue ? 'Update' : 'Add'}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>Are you sure you want to delete value &quot;{itemToDelete?.value}&quot;? This action cannot be undone.</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={confirmDelete}>
-            Delete
           </Button>
         </Modal.Footer>
       </Modal>

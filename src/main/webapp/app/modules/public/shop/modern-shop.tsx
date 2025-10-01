@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Form, InputGroup, Pagination, Spinner } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from 'app/config/store';
 import { getEntities as getProducts } from 'app/entities/product/product.reducer';
+import ProductRating from 'app/shared/components/ecommerce/product/product-rating';
 import axios from 'axios';
 import './modern-shop.scss';
 
@@ -15,6 +16,7 @@ interface CategoryWithCount {
 
 const ModernShop: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<CategoryWithCount[]>([]);
@@ -25,6 +27,26 @@ const ModernShop: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [totalProducts, setTotalProducts] = useState(0);
+  const [categoryName, setCategoryName] = useState('');
+
+  // Handle URL parameters for category filtering
+  useEffect(() => {
+    const categoryParam = searchParams.get('category');
+
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+    }
+  }, [searchParams]);
+
+  // Update category name when selectedCategory or categories change
+  useEffect(() => {
+    if (selectedCategory === 'all') {
+      setCategoryName('');
+    } else {
+      const category = categories.find(cat => cat.id.toString() === selectedCategory);
+      setCategoryName(category ? category.name : '');
+    }
+  }, [selectedCategory, categories]);
 
   // Debounce search term
   useEffect(() => {
@@ -165,10 +187,12 @@ const ModernShop: React.FC = () => {
           <Row>
             <Col>
               <h1 className="page-title mb-3" style={{ fontSize: '2.5rem', fontWeight: '700' }}>
-                Shop
+                {categoryName ? `${categoryName} Products` : 'Shop'}
               </h1>
               <p className="page-subtitle text-muted" style={{ fontSize: '1.1rem' }}>
-                Discover our amazing collection of products
+                {categoryName
+                  ? `Discover our amazing collection of ${categoryName.toLowerCase()} products`
+                  : 'Discover our amazing collection of products'}
               </p>
             </Col>
           </Row>
@@ -204,6 +228,8 @@ const ModernShop: React.FC = () => {
                       onClick={() => {
                         setSelectedCategory('all');
                         setCurrentPage(1);
+                        // Clear category query parameter
+                        navigate('/shop', { replace: true });
                       }}
                       style={{ cursor: 'pointer', padding: '8px 0', borderBottom: '1px solid #e9ecef' }}
                     >
@@ -219,6 +245,8 @@ const ModernShop: React.FC = () => {
                         onClick={() => {
                           setSelectedCategory(category.id?.toString() || '');
                           setCurrentPage(1);
+                          // Update URL with category parameter
+                          navigate(`/shop?category=${category.id}`, { replace: true });
                         }}
                         style={{ cursor: 'pointer', padding: '8px 0', borderBottom: '1px solid #e9ecef' }}
                       >
@@ -312,20 +340,6 @@ const ModernShop: React.FC = () => {
                               -{discount}%
                             </Badge>
                           )}
-
-                          <div className="product-actions position-absolute top-0 end-0 m-2">
-                            <Button
-                              variant="light"
-                              size="sm"
-                              className="rounded-circle me-1 mb-1"
-                              style={{ width: '35px', height: '35px' }}
-                            >
-                              <i className="fa fa-heart-o" />
-                            </Button>
-                            <Button variant="light" size="sm" className="rounded-circle" style={{ width: '35px', height: '35px' }}>
-                              <i className="fa fa-eye" />
-                            </Button>
-                          </div>
                         </div>
 
                         <Card.Body className="p-3">
@@ -342,10 +356,7 @@ const ModernShop: React.FC = () => {
                           </h6>
 
                           <div className="product-rating mb-2">
-                            <div className="d-flex align-items-center">
-                              <div className="me-2">{renderStars(4.5)}</div>
-                              <small className="text-muted">({Math.floor(Math.random() * 100) + 20})</small>
-                            </div>
+                            <ProductRating productId={product.id} showReviewsCount={true} size="sm" />
                           </div>
 
                           <div className="product-price mb-3">
@@ -376,6 +387,7 @@ const ModernShop: React.FC = () => {
                           <Button
                             variant="primary"
                             className="w-100"
+                            onClick={() => navigate(`/product/${product.id}`)}
                             style={{
                               borderRadius: '25px',
                               padding: '10px',
@@ -384,7 +396,7 @@ const ModernShop: React.FC = () => {
                               letterSpacing: '0.5px',
                             }}
                           >
-                            Add to Cart
+                            View Details
                           </Button>
                         </Card.Body>
                       </Card>

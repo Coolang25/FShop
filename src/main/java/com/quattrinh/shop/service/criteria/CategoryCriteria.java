@@ -28,6 +28,8 @@ public class CategoryCriteria implements Serializable, Criteria {
 
     private StringFilter image;
 
+    private BooleanFilter isActive;
+
     private LongFilter parentId;
 
     private Boolean distinct;
@@ -38,6 +40,7 @@ public class CategoryCriteria implements Serializable, Criteria {
         this.id = other.optionalId().map(LongFilter::copy).orElse(null);
         this.name = other.optionalName().map(StringFilter::copy).orElse(null);
         this.image = other.optionalImage().map(StringFilter::copy).orElse(null);
+        this.isActive = other.optionalIsActive().map(BooleanFilter::copy).orElse(null);
         this.parentId = other.optionalParentId().map(LongFilter::copy).orElse(null);
         this.distinct = other.distinct;
     }
@@ -104,6 +107,25 @@ public class CategoryCriteria implements Serializable, Criteria {
         this.image = image;
     }
 
+    public BooleanFilter getIsActive() {
+        return isActive;
+    }
+
+    public Optional<BooleanFilter> optionalIsActive() {
+        return Optional.ofNullable(isActive);
+    }
+
+    public BooleanFilter isActive() {
+        if (isActive == null) {
+            setIsActive(new BooleanFilter());
+        }
+        return isActive;
+    }
+
+    public void setIsActive(BooleanFilter isActive) {
+        this.isActive = isActive;
+    }
+
     public LongFilter getParentId() {
         return parentId;
     }
@@ -155,6 +177,7 @@ public class CategoryCriteria implements Serializable, Criteria {
             Objects.equals(id, that.id) &&
             Objects.equals(name, that.name) &&
             Objects.equals(image, that.image) &&
+            Objects.equals(isActive, that.isActive) &&
             Objects.equals(parentId, that.parentId) &&
             Objects.equals(distinct, that.distinct)
         );
@@ -162,7 +185,7 @@ public class CategoryCriteria implements Serializable, Criteria {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, image, parentId, distinct);
+        return Objects.hash(id, name, image, isActive, parentId, distinct);
     }
 
     // prettier-ignore
@@ -172,6 +195,7 @@ public class CategoryCriteria implements Serializable, Criteria {
             optionalId().map(f -> "id=" + f + ", ").orElse("") +
             optionalName().map(f -> "name=" + f + ", ").orElse("") +
             optionalImage().map(f -> "image=" + f + ", ").orElse("") +
+            optionalIsActive().map(f -> "isActive=" + f + ", ").orElse("") +
             optionalParentId().map(f -> "parentId=" + f + ", ").orElse("") +
             optionalDistinct().map(f -> "distinct=" + f + ", ").orElse("") +
         "}";

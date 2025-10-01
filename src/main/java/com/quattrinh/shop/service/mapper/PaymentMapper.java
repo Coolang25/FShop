@@ -17,5 +17,13 @@ public interface PaymentMapper extends EntityMapper<PaymentDTO, Payment> {
     @Named("shopOrderId")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
+    @Mapping(target = "status", source = "status")
+    @Mapping(target = "total", source = "total")
+    @Mapping(target = "shippingAddress", source = "shippingAddress")
+    @Mapping(target = "createdAt", source = "createdAt")
+    @Mapping(target = "updatedAt", source = "updatedAt")
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "payment", ignore = true)
+    @Mapping(target = "orderItems", ignore = true)
     ShopOrderDTO toDtoShopOrderId(ShopOrder shopOrder);
 }

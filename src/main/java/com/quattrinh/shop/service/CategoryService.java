@@ -103,23 +103,64 @@ public class CategoryService {
     }
 
     /**
-     * Delete the category by id.
+     * Delete the category by id (soft delete).
      *
      * @param id the id of the entity.
      */
     public void delete(Long id) {
-        LOG.debug("Request to delete Category : {}", id);
-        categoryRepository.deleteById(id);
+        LOG.debug("Request to soft delete Category : {}", id);
+        Optional<Category> categoryOpt = categoryRepository.findById(id);
+        if (categoryOpt.isPresent()) {
+            Category category = categoryOpt.get();
+            category.setActive(false);
+            categoryRepository.save(category);
+        }
     }
 
     /**
-     * Get all parent categories (categories without parent) with product counts.
+     * Activate the category by id.
      *
-     * @return the list of parent categories.
+     * @param id the id of the entity.
+     */
+    public void activate(Long id) {
+        LOG.debug("Request to activate Category : {}", id);
+        Optional<Category> categoryOpt = categoryRepository.findById(id);
+        if (categoryOpt.isPresent()) {
+            Category category = categoryOpt.get();
+            category.setActive(true);
+            categoryRepository.save(category);
+        }
+    }
+
+    /**
+     * Get all active parent categories (categories without parent) with product counts.
+     *
+     * @return the list of active parent categories.
      */
     @Transactional(readOnly = true)
     public List<CategoryDTO> findParentCategories() {
-        LOG.debug("Request to get Parent Categories");
+        LOG.debug("Request to get Active Parent Categories");
+        List<Category> parentCategories = categoryRepository.findByParentCategoryIsNullAndIsActiveTrue();
+        return parentCategories
+            .stream()
+            .map(category -> {
+                CategoryDTO dto = categoryMapper.toDto(category);
+                // Count products in this category and all its subcategories
+                long productCount = countProductsInCategory(category);
+                dto.setProductCount(productCount);
+                return dto;
+            })
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all parent categories (including inactive ones) for admin management.
+     *
+     * @return the list of all parent categories.
+     */
+    @Transactional(readOnly = true)
+    public List<CategoryDTO> findAllParentCategories() {
+        LOG.debug("Request to get All Parent Categories (Admin)");
         List<Category> parentCategories = categoryRepository.findByParentCategoryIsNull();
         return parentCategories
             .stream()
@@ -134,7 +175,28 @@ public class CategoryService {
     }
 
     /**
-     * Count products in a category and all its subcategories recursively.
+     * Get all categories (including inactive ones and subcategories) for admin management.
+     *
+     * @return the list of all categories.
+     */
+    @Transactional(readOnly = true)
+    public List<CategoryDTO> findAllCategories() {
+        LOG.debug("Request to get All Categories (Admin)");
+        List<Category> allCategories = categoryRepository.findAll();
+        return allCategories
+            .stream()
+            .map(category -> {
+                CategoryDTO dto = categoryMapper.toDto(category);
+                // Count products in this category only (not recursive for performance)
+                long productCount = category.getProducts().size();
+                dto.setProductCount(productCount);
+                return dto;
+            })
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Count products in a category and all its active subcategories recursively.
      *
      * @param category the category to count products for.
      * @return the total product count.
@@ -142,9 +204,11 @@ public class CategoryService {
     private long countProductsInCategory(Category category) {
         long count = category.getProducts().size();
 
-        // Add products from subcategories
+        // Add products from active subcategories only
         for (Category subCategory : category.getSubCategories()) {
-            count += countProductsInCategory(subCategory);
+            if (subCategory.getActive()) {
+                count += countProductsInCategory(subCategory);
+            }
         }
 
         return count;

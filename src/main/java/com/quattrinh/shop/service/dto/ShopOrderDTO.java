@@ -5,6 +5,7 @@ import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -30,6 +31,10 @@ public class ShopOrderDTO implements Serializable {
     private Instant updatedAt;
 
     private UserDTO user;
+
+    private PaymentDTO payment;
+
+    private List<OrderItemDTO> orderItems;
 
     public Long getId() {
         return id;
@@ -87,6 +92,22 @@ public class ShopOrderDTO implements Serializable {
         this.user = user;
     }
 
+    public PaymentDTO getPayment() {
+        return payment;
+    }
+
+    public void setPayment(PaymentDTO payment) {
+        this.payment = payment;
+    }
+
+    public List<OrderItemDTO> getOrderItems() {
+        return orderItems;
+    }
+
+    public void setOrderItems(List<OrderItemDTO> orderItems) {
+        this.orderItems = orderItems;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -119,6 +140,7 @@ public class ShopOrderDTO implements Serializable {
             ", createdAt='" + getCreatedAt() + "'" +
             ", updatedAt='" + getUpdatedAt() + "'" +
             ", user=" + getUser() +
+            ", payment=" + getPayment() +
             "}";
     }
 }

@@ -18,7 +18,9 @@ const AppRouter: React.FC = () => {
 
   // Determine which layout to use based on route and user status
   const isAdminRoute = location.pathname.startsWith('/admin');
-  const isUserRoute = location.pathname.match(/^\/(cart|checkout|account)/);
+  // Exclude public account routes (register, activate, reset) from user routes
+  const isPublicAccountRoute = location.pathname.match(/^\/account\/(register|activate|reset)/);
+  const isUserRoute = location.pathname.match(/^\/(cart|checkout|orders|account)/) && !isPublicAccountRoute;
 
   // Route classification
   const getRouteType = () => {

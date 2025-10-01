@@ -14,7 +14,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 @Table(name = "chatbot_logs")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
-public class ChatbotLog implements Serializable {
+public class ChatbotLog extends AbstractAuditingEntity<Long> {
 
     private static final long serialVersionUID = 1L;
 

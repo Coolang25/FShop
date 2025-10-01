@@ -17,7 +17,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 @Table(name = "product_variants")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
-public class ProductVariant implements Serializable {
+public class ProductVariant extends AbstractAuditingEntity<Long> {
 
     private static final long serialVersionUID = 1L;
 
@@ -34,6 +34,10 @@ public class ProductVariant implements Serializable {
     @NotNull
     @Column(name = "price", precision = 21, scale = 2, nullable = false)
     private BigDecimal price;
+
+    @NotNull
+    @Column(name = "cost_price", precision = 21, scale = 2, nullable = false)
+    private BigDecimal costPrice;
 
     @NotNull
     @Min(value = 0)
@@ -99,6 +103,19 @@ public class ProductVariant implements Serializable {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public BigDecimal getCostPrice() {
+        return this.costPrice;
+    }
+
+    public ProductVariant costPrice(BigDecimal costPrice) {
+        this.setCostPrice(costPrice);
+        return this;
+    }
+
+    public void setCostPrice(BigDecimal costPrice) {
+        this.costPrice = costPrice;
     }
 
     public Integer getStock() {
@@ -202,6 +219,7 @@ public class ProductVariant implements Serializable {
             "id=" + getId() +
             ", sku='" + getSku() + "'" +
             ", price=" + getPrice() +
+            ", costPrice=" + getCostPrice() +
             ", stock=" + getStock() +
             ", imageUrl='" + getImageUrl() + "'" +
             ", isActive=" + getIsActive() +

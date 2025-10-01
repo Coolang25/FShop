@@ -17,7 +17,7 @@ const AppContent = () => {
 
   useEffect(() => {
     dispatch(getSession());
-    dispatch(getProfile());
+    // dispatch(getProfile()); // Disabled to prevent /api/management/info calls
   }, []);
 
   return <AppRouter />;

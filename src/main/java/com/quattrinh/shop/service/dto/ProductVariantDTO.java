@@ -22,6 +22,9 @@ public class ProductVariantDTO implements Serializable {
     @NotNull
     private BigDecimal price;
 
+    @NotNull
+    private BigDecimal costPrice;
+
     private Integer stock = 0;
 
     private String imageUrl;
@@ -54,6 +57,14 @@ public class ProductVariantDTO implements Serializable {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public BigDecimal getCostPrice() {
+        return costPrice;
+    }
+
+    public void setCostPrice(BigDecimal costPrice) {
+        this.costPrice = costPrice;
     }
 
     public Integer getStock() {
@@ -124,6 +135,7 @@ public class ProductVariantDTO implements Serializable {
             "id=" + getId() +
             ", sku='" + getSku() + "'" +
             ", price=" + getPrice() +
+            ", costPrice=" + getCostPrice() +
             ", stock=" + getStock() +
             ", imageUrl='" + getImageUrl() + "'" +
             ", isActive=" + getIsActive() +

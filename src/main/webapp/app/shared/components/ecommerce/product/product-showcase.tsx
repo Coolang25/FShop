@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, Button, Badge, ButtonGroup } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from 'app/config/store';
 import { getNewProducts, getBestSellerProducts } from 'app/shared/reducers/home-products.reducer';
+import ProductRating from './product-rating';
 
 const ProductShowcase: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const newProducts = useAppSelector(state => state.homeProducts.newProducts);
   const bestSellerProducts = useAppSelector(state => state.homeProducts.bestSellerProducts);
   const loading = useAppSelector(state => state.homeProducts.loading);
@@ -221,15 +224,6 @@ const ProductShowcase: React.FC = () => {
                         -{discount}%
                       </Badge>
                     )}
-
-                    <div className="product-actions position-absolute top-0 end-0 m-2">
-                      <Button variant="light" size="sm" className="rounded-circle me-1 mb-1" style={{ width: '35px', height: '35px' }}>
-                        <i className="fa fa-heart-o" />
-                      </Button>
-                      <Button variant="light" size="sm" className="rounded-circle" style={{ width: '35px', height: '35px' }}>
-                        <i className="fa fa-eye" />
-                      </Button>
-                    </div>
                   </div>
 
                   <Card.Body className="p-3">
@@ -246,10 +240,7 @@ const ProductShowcase: React.FC = () => {
                     </h6>
 
                     <div className="product-rating mb-2">
-                      <div className="d-flex align-items-center">
-                        <div className="me-2">{renderStars(product.rating || 4.5)}</div>
-                        <small className="text-muted">({product.reviews || Math.floor(Math.random() * 100) + 20})</small>
-                      </div>
+                      <ProductRating productId={product.id} showReviewsCount={true} size="sm" />
                     </div>
 
                     <div className="product-price mb-3">
@@ -280,6 +271,7 @@ const ProductShowcase: React.FC = () => {
                     <Button
                       variant="primary"
                       className="w-100"
+                      onClick={() => navigate(`/product/${product.id}`)}
                       style={{
                         borderRadius: '25px',
                         padding: '10px',
@@ -288,32 +280,13 @@ const ProductShowcase: React.FC = () => {
                         letterSpacing: '0.5px',
                       }}
                     >
-                      Add to Cart
+                      View Details
                     </Button>
                   </Card.Body>
                 </Card>
               </Col>
             );
           })}
-        </Row>
-
-        {/* View More Button */}
-        <Row className="mt-4">
-          <Col className="text-center">
-            <Button
-              variant="outline-primary"
-              size="lg"
-              style={{
-                borderRadius: '25px',
-                padding: '12px 40px',
-                fontWeight: '600',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-              }}
-            >
-              View All Products
-            </Button>
-          </Col>
         </Row>
       </Container>
     </section>

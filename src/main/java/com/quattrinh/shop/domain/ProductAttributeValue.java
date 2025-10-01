@@ -16,7 +16,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 @Table(name = "product_attribute_values")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
-public class ProductAttributeValue implements Serializable {
+public class ProductAttributeValue extends AbstractAuditingEntity<Long> {
 
     private static final long serialVersionUID = 1L;
 

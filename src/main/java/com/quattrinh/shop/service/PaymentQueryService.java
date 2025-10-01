@@ -89,9 +89,6 @@ public class PaymentQueryService extends QueryService<Payment> {
             if (criteria.getTransactionId() != null) {
                 specification = specification.and(buildStringSpecification(criteria.getTransactionId(), Payment_.transactionId));
             }
-            if (criteria.getCreatedAt() != null) {
-                specification = specification.and(buildRangeSpecification(criteria.getCreatedAt(), Payment_.createdAt));
-            }
             if (criteria.getOrderId() != null) {
                 specification = specification.and(
                     buildSpecification(criteria.getOrderId(), root -> root.join(Payment_.order, JoinType.LEFT).get(ShopOrder_.id))

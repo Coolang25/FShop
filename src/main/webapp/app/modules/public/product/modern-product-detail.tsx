@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Spinner, Alert } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useAppSelector } from 'app/config/store';
 import './modern-product-detail.scss';
 
 interface ProductDetailProps {
@@ -49,6 +50,13 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
   const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [cartMessage, setCartMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Authentication state
+  const account = useAppSelector(state => state.authentication.account);
+  const isAuthenticated = useAppSelector(state => state.authentication.isAuthenticated);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProductDetail();
@@ -67,13 +75,21 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
   const handleSubmitReview = async () => {
     if (!newReview.comment.trim()) return;
 
+    // Check if user is authenticated
+    if (!isAuthenticated || !account?.id) {
+      // Save current URL and redirect to login page
+      const currentUrl = window.location.pathname + window.location.search;
+      navigate(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+      return;
+    }
+
     try {
       setSubmittingReview(true);
       await axios.post('/api/product-reviews', {
         rating: newReview.rating,
         comment: newReview.comment,
         product: { id: productId },
-        user: { id: 2 }, // Fixed user ID for now
+        user: { id: account.id }, // Use current logged-in user ID
       });
 
       // Reset form and refresh reviews
@@ -81,6 +97,7 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
       fetchReviews();
     } catch (err) {
       console.error('Error submitting review:', err);
+      alert('Error submitting review. Please try again!');
     } finally {
       setSubmittingReview(false);
     }
@@ -88,6 +105,56 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
 
   const handleSubmitReviewClick = () => {
     handleSubmitReview();
+  };
+
+  const handleAddToCart = async () => {
+    // Check if user is authenticated
+    if (!isAuthenticated || !account?.id) {
+      // Save current URL and redirect to login page
+      const currentUrl = window.location.pathname + window.location.search;
+      navigate(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+      return;
+    }
+
+    // Check if variant is selected
+    if (!selectedVariant) {
+      setCartMessage({ type: 'error', text: 'Please select product options!' });
+      setTimeout(() => setCartMessage(null), 3000);
+      return;
+    }
+
+    // Check stock availability
+    if (selectedVariant.stock < quantity) {
+      setCartMessage({ type: 'error', text: 'Not enough stock available!' });
+      setTimeout(() => setCartMessage(null), 3000);
+      return;
+    }
+
+    try {
+      setAddingToCart(true);
+
+      // Use optimized single API call to add item to cart
+      const response = await axios.post('/api/carts/add-item', null, {
+        params: {
+          userId: account.id,
+          variantId: selectedVariant.id,
+          quantity,
+        },
+      });
+
+      setCartMessage({ type: 'success', text: 'Product added to cart successfully!' });
+      setTimeout(() => setCartMessage(null), 3000);
+
+      // Trigger cart count refresh in header
+      window.dispatchEvent(new CustomEvent('cartUpdated'));
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      console.error('Error details:', err.response?.data);
+      setCartMessage({ type: 'error', text: 'Error adding product to cart. Please try again!' });
+      setTimeout(() => setCartMessage(null), 3000);
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   const fetchProductDetail = async () => {
@@ -177,6 +244,12 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
     ));
   };
 
+  const calculateAverageRating = () => {
+    if (reviews.length === 0) return 0;
+    const totalRating = reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+    return totalRating / reviews.length;
+  };
+
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -256,8 +329,10 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
               {/* Rating */}
               <div className="product-rating mb-3">
                 <div className="d-flex align-items-center">
-                  <div className="me-2">{renderStars(4.5)}</div>
-                  <span className="text-muted">(4.5) • 128 reviews</span>
+                  <div className="me-2">{renderStars(calculateAverageRating())}</div>
+                  <span className="text-muted">
+                    ({calculateAverageRating().toFixed(1)}) • {reviews.length} review{reviews.length !== 1 ? 's' : ''}
+                  </span>
                 </div>
               </div>
 
@@ -285,13 +360,6 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
                     ${product.basePrice}
                   </span>
                 )}
-              </div>
-
-              {/* Description */}
-              <div className="product-description mb-4">
-                <p style={{ fontSize: '1.1rem', lineHeight: '1.6', color: '#5a6c7d' }}>
-                  {product.description || 'No description available.'}
-                </p>
               </div>
 
               {/* Attributes */}
@@ -394,25 +462,59 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
                         variant="primary"
                         size="lg"
                         className="w-100"
+                        onClick={() => {
+                          handleAddToCart();
+                        }}
+                        disabled={!selectedVariant || selectedVariant.stock === 0 || addingToCart}
                         style={{
                           borderRadius: '25px',
                           padding: '12px',
                           fontWeight: '600',
                           textTransform: 'uppercase',
                           letterSpacing: '0.5px',
+                          background:
+                            !selectedVariant || selectedVariant.stock === 0 || addingToCart
+                              ? 'linear-gradient(135deg, #6c757d 0%, #495057 100%)'
+                              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          border: 'none',
+                          transition: 'all 0.3s ease',
                         }}
-                        disabled={!selectedVariant || selectedVariant.stock === 0}
                       >
-                        <i className="fa fa-shopping-cart me-2" />
-                        Add to Cart
+                        {addingToCart ? (
+                          <>
+                            <i className="fa fa-spinner fa-spin me-2" />
+                            Adding...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fa fa-shopping-cart me-2" />
+                            Add to Cart
+                          </>
+                        )}
                       </Button>
+
+                      {/* Cart Message */}
+                      {cartMessage && (
+                        <div
+                          className={`alert ${cartMessage.type === 'success' ? 'alert-success' : 'alert-danger'} mt-3`}
+                          style={{
+                            borderRadius: '10px',
+                            border: 'none',
+                            fontSize: '0.9rem',
+                            fontWeight: '500',
+                          }}
+                        >
+                          <i className={`fa ${cartMessage.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2`} />
+                          {cartMessage.text}
+                        </div>
+                      )}
                     </div>
                   </Col>
                 </Row>
               </div>
 
               {/* Product Features */}
-              <div className="product-features mt-5">
+              <div className="product-features mt-4">
                 <Row>
                   <Col md={4} className="text-center mb-3">
                     <div className="feature-item">
@@ -478,374 +580,342 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
                   )}
                   {activeTab === 'reviews' && (
                     <div className="tab-pane fade show active" role="tabpanel">
-                      <Row>
-                        {/* Reviews List - Left Column */}
-                        <Col lg={8} md={7}>
-                          <div className="reviews-section">
-                            <div className="d-flex align-items-center justify-content-between mb-4">
-                              <h5 className="mb-0" style={{ fontWeight: '700', color: '#2c3e50' }}>
-                                Customer Reviews
-                              </h5>
-                              <Badge
-                                bg="primary"
-                                style={{
-                                  fontSize: '0.9rem',
-                                  padding: '8px 16px',
-                                  borderRadius: '20px',
-                                  fontWeight: '600',
-                                }}
-                              >
-                                {reviews.length} {reviews.length === 1 ? 'Review' : 'Reviews'}
-                              </Badge>
-                            </div>
+                      <div className="reviews-chat-container">
+                        {/* Reviews Header */}
+                        <div className="d-flex align-items-center justify-content-between mb-4">
+                          <h5 className="mb-0" style={{ fontWeight: '700', color: '#2c3e50' }}>
+                            <i className="fa fa-comments me-2 text-primary"></i>
+                            Customer Reviews
+                          </h5>
+                          <Badge
+                            bg="primary"
+                            style={{
+                              fontSize: '0.9rem',
+                              padding: '8px 16px',
+                              borderRadius: '20px',
+                              fontWeight: '600',
+                            }}
+                          >
+                            {reviews.length} {reviews.length === 1 ? 'Review' : 'Reviews'}
+                          </Badge>
+                        </div>
 
-                            {reviews.length > 0 ? (
-                              <div className="reviews-list">
-                                {reviews.map((review, index) => (
-                                  <Card
-                                    key={index}
-                                    className="review-item mb-4 border-0 shadow-sm"
-                                    style={{
-                                      borderRadius: '15px',
-                                      overflow: 'hidden',
-                                      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                                    }}
-                                    onMouseEnter={e => {
-                                      e.currentTarget.style.transform = 'translateY(-2px)';
-                                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)';
-                                    }}
-                                    onMouseLeave={e => {
-                                      e.currentTarget.style.transform = 'translateY(0)';
-                                      e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-                                    }}
-                                  >
-                                    <Card.Body className="p-4">
-                                      <div className="d-flex align-items-start">
-                                        {/* User Avatar */}
-                                        <div className="me-3">
-                                          <div
-                                            className="user-avatar rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                                            style={{
-                                              width: '60px',
-                                              height: '60px',
-                                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                              color: 'white',
-                                              fontSize: '1.3rem',
-                                              fontWeight: '700',
-                                              border: '3px solid #fff',
-                                              boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
-                                            }}
-                                          >
-                                            U{review.userId}
-                                          </div>
-                                        </div>
-
-                                        {/* Review Content */}
-                                        <div className="flex-grow-1">
-                                          <div className="d-flex justify-content-between align-items-start mb-3">
-                                            <div>
-                                              <h6 className="mb-1" style={{ fontWeight: '600', color: '#2c3e50' }}>
-                                                User {review.userId}
-                                              </h6>
-                                              <div className="rating mb-2">
-                                                {Array.from({ length: 5 }, (_, i) => (
-                                                  <i
-                                                    key={i}
-                                                    className={`fa fa-star ${i < review.rating ? 'text-warning' : 'text-muted'}`}
-                                                    style={{
-                                                      fontSize: '1.1rem',
-                                                      filter: i < review.rating ? 'drop-shadow(0 2px 4px rgba(255, 193, 7, 0.3))' : 'none',
-                                                      cursor: 'pointer',
-                                                      transition: 'all 0.2s ease',
-                                                    }}
-                                                    onClick={() => {
-                                                      // For now, just show the rating, later can add edit functionality
-                                                      console.log(`Selected rating: ${i + 1}`);
-                                                    }}
-                                                    onMouseEnter={e => {
-                                                      if (i < review.rating) {
-                                                        e.currentTarget.style.transform = 'scale(1.1)';
-                                                      }
-                                                    }}
-                                                    onMouseLeave={e => {
-                                                      e.currentTarget.style.transform = 'scale(1)';
-                                                    }}
-                                                  />
-                                                ))}
-                                                <span className="ms-2 text-muted" style={{ fontSize: '0.9rem' }}>
-                                                  {review.rating}/5
-                                                </span>
-                                              </div>
-                                            </div>
-                                            <div className="text-end">
-                                              <div className="d-flex flex-column align-items-end">
-                                                <small className="text-muted" style={{ fontSize: '0.85rem', fontWeight: '500' }}>
-                                                  {new Date(review.lastModifiedDate || review.createdDate).toLocaleDateString('vi-VN', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                  })}
-                                                </small>
-                                                <small className="text-muted" style={{ fontSize: '0.8rem' }}>
-                                                  {new Date(review.lastModifiedDate || review.createdDate).toLocaleTimeString('vi-VN', {
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
-                                                    hour12: false,
-                                                  })}
-                                                </small>
-                                              </div>
-                                            </div>
-                                          </div>
-                                          <div
-                                            className="review-comment"
-                                            style={{
-                                              lineHeight: '1.6',
-                                              color: '#5a6c7d',
-                                              fontSize: '1rem',
-                                              backgroundColor: '#f8f9fa',
-                                              padding: '15px',
-                                              borderRadius: '10px',
-                                              border: '1px solid #e9ecef',
-                                            }}
-                                          >
-                                            &ldquo;{review.comment}&rdquo;
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </Card.Body>
-                                  </Card>
-                                ))}
-                              </div>
-                            ) : (
-                              <Card className="border-0 shadow-sm" style={{ borderRadius: '15px' }}>
-                                <Card.Body className="text-center py-5">
-                                  <div className="mb-4">
-                                    <div
-                                      className="mx-auto d-flex align-items-center justify-content-center rounded-circle"
-                                      style={{
-                                        width: '80px',
-                                        height: '80px',
-                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                        color: 'white',
-                                        fontSize: '2rem',
-                                      }}
-                                    >
-                                      <i className="fa fa-comment-o"></i>
-                                    </div>
-                                  </div>
-                                  <h6 className="text-muted mb-2" style={{ fontWeight: '600' }}>
-                                    No reviews yet
-                                  </h6>
-                                  <p className="text-muted mb-0">Be the first to share your thoughts about this product!</p>
-                                </Card.Body>
-                              </Card>
-                            )}
-                          </div>
-                        </Col>
-
-                        {/* Add Review Form - Right Column */}
-                        <Col lg={4} md={5}>
-                          <div className="add-review-section">
-                            <div className="sticky-top" style={{ top: '20px' }}>
-                              <Card
-                                className="border-0 shadow-lg"
-                                style={{
-                                  borderRadius: '20px',
-                                  overflow: 'hidden',
-                                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                }}
-                              >
-                                <Card.Header
-                                  className="text-white border-0"
+                        {/* Reviews Chat Area */}
+                        <div
+                          className="reviews-chat-area"
+                          style={{
+                            maxHeight: '600px',
+                            overflowY: 'auto',
+                            border: '1px solid #e9ecef',
+                            borderRadius: '15px',
+                            backgroundColor: '#f8f9fa',
+                            padding: '20px',
+                            marginBottom: '20px',
+                          }}
+                        >
+                          {reviews.length > 0 ? (
+                            <div className="reviews-messages">
+                              {reviews.map((review, index) => (
+                                <div
+                                  key={index}
+                                  className="review-message mb-4"
                                   style={{
-                                    background: 'rgba(255, 255, 255, 0.1)',
-                                    backdropFilter: 'blur(10px)',
-                                    padding: '20px',
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '12px',
                                   }}
                                 >
-                                  <div className="d-flex align-items-center">
+                                  {/* User Avatar */}
+                                  <div className="flex-shrink-0">
                                     <div
-                                      className="me-3 d-flex align-items-center justify-content-center rounded-circle"
+                                      className="user-avatar rounded-circle d-flex align-items-center justify-content-center"
                                       style={{
-                                        width: '40px',
-                                        height: '40px',
-                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                        fontSize: '1.2rem',
+                                        width: '50px',
+                                        height: '50px',
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        color: 'white',
+                                        fontSize: '1.1rem',
+                                        fontWeight: '700',
+                                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
                                       }}
                                     >
-                                      <i className="fa fa-edit"></i>
-                                    </div>
-                                    <div>
-                                      <h6 className="mb-0" style={{ fontWeight: '700' }}>
-                                        Write a Review
-                                      </h6>
-                                      <small style={{ opacity: '0.9' }}>Share your experience</small>
+                                      U{review.userId}
                                     </div>
                                   </div>
-                                </Card.Header>
-                                <Card.Body className="p-4" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)' }}>
-                                  <div className="review-form">
-                                    <div className="mb-4">
-                                      <label className="form-label fw-bold" style={{ color: '#2c3e50' }}>
-                                        Your Rating:
-                                      </label>
-                                      <div className="rating-input text-center mb-3">
-                                        <div className="d-flex justify-content-center align-items-center gap-2">
-                                          {Array.from({ length: 5 }, (_, i) => {
-                                            const starValue = i + 1;
-                                            const isSelected = starValue <= newReview.rating;
 
-                                            return (
-                                              <button
+                                  {/* Message Content */}
+                                  <div className="flex-grow-1">
+                                    <div
+                                      className="message-bubble"
+                                      style={{
+                                        backgroundColor: 'white',
+                                        borderRadius: '18px 18px 18px 4px',
+                                        padding: '12px 16px',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                        border: '1px solid #e9ecef',
+                                        maxWidth: '80%',
+                                      }}
+                                    >
+                                      {/* User Info & Rating */}
+                                      <div className="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                          <span className="fw-bold text-dark" style={{ fontSize: '0.9rem' }}>
+                                            User {review.userId}
+                                          </span>
+                                          <div className="rating d-inline-block ms-2">
+                                            {Array.from({ length: 5 }, (_, i) => (
+                                              <i
                                                 key={i}
-                                                type="button"
-                                                className="btn p-0 border-0 bg-transparent"
-                                                onClick={() => {
-                                                  console.log('Clicking star:', starValue);
-                                                  setNewReview({ ...newReview, rating: starValue });
-                                                }}
+                                                className={`fa fa-star ${i < review.rating ? 'text-warning' : 'text-muted'}`}
                                                 style={{
-                                                  fontSize: '2.5rem',
-                                                  color: isSelected ? '#ffc107' : '#dee2e6',
-                                                  cursor: 'pointer',
-                                                  transition: 'all 0.2s ease',
-                                                  padding: '5px',
-                                                  borderRadius: '50%',
+                                                  fontSize: '0.8rem',
+                                                  filter: i < review.rating ? 'drop-shadow(0 1px 2px rgba(255, 193, 7, 0.3))' : 'none',
                                                 }}
-                                                onMouseEnter={e => {
-                                                  e.currentTarget.style.transform = 'scale(1.1)';
-                                                  e.currentTarget.style.color = '#ffc107';
-                                                }}
-                                                onMouseLeave={e => {
-                                                  e.currentTarget.style.transform = 'scale(1)';
-                                                  e.currentTarget.style.color = isSelected ? '#ffc107' : '#dee2e6';
-                                                }}
-                                              >
-                                                <i className="fa fa-star" />
-                                              </button>
-                                            );
+                                              />
+                                            ))}
+                                            <span className="ms-1 text-muted" style={{ fontSize: '0.75rem' }}>
+                                              {review.rating}/5
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                          {new Date(review.lastModifiedDate || review.createdDate).toLocaleDateString('vi-VN', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                          })}{' '}
+                                          {new Date(review.lastModifiedDate || review.createdDate).toLocaleTimeString('vi-VN', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            hour12: false,
                                           })}
-                                        </div>
-                                      </div>
-                                      <div className="text-center mt-2">
-                                        <small className="text-muted fw-semibold" style={{ fontSize: '0.9rem' }}>
-                                          {newReview.rating} out of 5 stars
                                         </small>
-                                        <div className="mt-1">
-                                          <small className="text-info" style={{ fontSize: '0.8rem' }}>
-                                            Current rating: {newReview.rating} (Click stars to change)
-                                          </small>
-                                        </div>
                                       </div>
-                                    </div>
 
-                                    <div className="mb-4">
-                                      <label className="form-label fw-bold" style={{ color: '#2c3e50' }}>
-                                        Your Comment:
-                                      </label>
-                                      <textarea
-                                        className="form-control"
-                                        rows={4}
-                                        value={newReview.comment}
-                                        onChange={e => setNewReview({ ...newReview, comment: e.target.value })}
-                                        placeholder="Share your thoughts about this product..."
+                                      {/* Review Text */}
+                                      <div
+                                        className="review-text"
                                         style={{
-                                          resize: 'vertical',
-                                          borderRadius: '15px',
-                                          border: '2px solid #e9ecef',
+                                          color: '#2c3e50',
                                           fontSize: '0.95rem',
                                           lineHeight: '1.5',
-                                          transition: 'border-color 0.3s ease',
-                                        }}
-                                        onFocus={e => {
-                                          e.target.style.borderColor = '#667eea';
-                                        }}
-                                        onBlur={e => {
-                                          e.target.style.borderColor = '#e9ecef';
-                                        }}
-                                      />
-                                      <div className="mt-1">
-                                        <small className="text-muted">{newReview.comment.length}/500 characters</small>
-                                      </div>
-                                    </div>
-
-                                    <Button
-                                      variant="primary"
-                                      className="w-100"
-                                      onClick={handleSubmitReviewClick}
-                                      disabled={submittingReview || !newReview.comment.trim() || newReview.rating < 1}
-                                      style={{
-                                        borderRadius: '25px',
-                                        padding: '12px',
-                                        fontWeight: '700',
-                                        fontSize: '1rem',
-                                        background:
-                                          newReview.rating < 1 || !newReview.comment.trim()
-                                            ? 'linear-gradient(135deg, #6c757d 0%, #495057 100%)'
-                                            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                        border: 'none',
-                                        boxShadow:
-                                          newReview.rating < 1 || !newReview.comment.trim()
-                                            ? '0 4px 15px rgba(108, 117, 125, 0.4)'
-                                            : '0 4px 15px rgba(102, 126, 234, 0.4)',
-                                        transition: 'all 0.3s ease',
-                                      }}
-                                      onMouseEnter={e => {
-                                        if (newReview.rating >= 1 && newReview.comment.trim()) {
-                                          e.currentTarget.style.transform = 'translateY(-2px)';
-                                          e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
-                                        }
-                                      }}
-                                      onMouseLeave={e => {
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow =
-                                          newReview.rating < 1 || !newReview.comment.trim()
-                                            ? '0 4px 15px rgba(108, 117, 125, 0.4)'
-                                            : '0 4px 15px rgba(102, 126, 234, 0.4)';
-                                      }}
-                                    >
-                                      {submittingReview ? (
-                                        <>
-                                          <i className="fa fa-spinner fa-spin me-2"></i>
-                                          Submitting...
-                                        </>
-                                      ) : newReview.rating < 1 ? (
-                                        <>
-                                          <i className="fa fa-star me-2"></i>
-                                          Please select a rating
-                                        </>
-                                      ) : !newReview.comment.trim() ? (
-                                        <>
-                                          <i className="fa fa-comment me-2"></i>
-                                          Please write a comment
-                                        </>
-                                      ) : (
-                                        <>
-                                          <i className="fa fa-paper-plane me-2"></i>
-                                          Submit Review
-                                        </>
-                                      )}
-                                    </Button>
-
-                                    <div className="mt-4 text-center">
-                                      <div
-                                        className="d-inline-flex align-items-center px-3 py-2 rounded-pill"
-                                        style={{
-                                          backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                                          border: '1px solid rgba(102, 126, 234, 0.2)',
+                                          margin: 0,
                                         }}
                                       >
-                                        <i className="fa fa-shield-alt me-2" style={{ color: '#667eea' }}></i>
-                                        <small style={{ color: '#667eea', fontWeight: '600' }}>Your review helps other customers</small>
+                                        {review.comment}
                                       </div>
                                     </div>
                                   </div>
-                                </Card.Body>
-                              </Card>
+                                </div>
+                              ))}
                             </div>
-                          </div>
-                        </Col>
-                      </Row>
+                          ) : (
+                            <div className="text-center py-5">
+                              <div
+                                className="mx-auto d-flex align-items-center justify-content-center rounded-circle mb-3"
+                                style={{
+                                  width: '60px',
+                                  height: '60px',
+                                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                  color: 'white',
+                                  fontSize: '1.5rem',
+                                }}
+                              >
+                                <i className="fa fa-comment-o"></i>
+                              </div>
+                              <h6 className="text-muted mb-2" style={{ fontWeight: '600' }}>
+                                Chưa có đánh giá nào
+                              </h6>
+                              <p className="text-muted mb-0" style={{ fontSize: '0.9rem' }}>
+                                Hãy là người đầu tiên chia sẻ cảm nhận về sản phẩm này!
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* New Review Input - Like Message Input */}
+                        <div className="new-review-input">
+                          {isAuthenticated && account ? (
+                            <Card className="border-0 shadow-sm" style={{ borderRadius: '15px' }}>
+                              <Card.Body className="p-4">
+                                <div className="d-flex align-items-center mb-3">
+                                  <div
+                                    className="me-3 d-flex align-items-center justify-content-center rounded-circle"
+                                    style={{
+                                      width: '40px',
+                                      height: '40px',
+                                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                      color: 'white',
+                                      fontSize: '1.1rem',
+                                      fontWeight: '700',
+                                    }}
+                                  >
+                                    {account.firstName ? account.firstName.charAt(0).toUpperCase() : account.login.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <h6 className="mb-0" style={{ fontWeight: '600', color: '#2c3e50' }}>
+                                      Write a Review
+                                    </h6>
+                                    <small className="text-muted">Share your experience ({account.firstName || account.login})</small>
+                                  </div>
+                                </div>
+
+                                {/* Rating Input */}
+                                <div className="mb-3">
+                                  <label className="form-label fw-semibold" style={{ color: '#2c3e50', fontSize: '0.9rem' }}>
+                                    Your Rating:
+                                  </label>
+                                  <div className="rating-input">
+                                    <div className="d-flex align-items-center gap-1">
+                                      {Array.from({ length: 5 }, (_, i) => {
+                                        const starValue = i + 1;
+                                        const isSelected = starValue <= newReview.rating;
+
+                                        return (
+                                          <button
+                                            key={i}
+                                            type="button"
+                                            className="btn p-0 border-0 bg-transparent"
+                                            onClick={() => {
+                                              setNewReview({ ...newReview, rating: starValue });
+                                            }}
+                                            style={{
+                                              fontSize: '1.8rem',
+                                              color: isSelected ? '#ffc107' : '#dee2e6',
+                                              cursor: 'pointer',
+                                              transition: 'all 0.2s ease',
+                                              padding: '2px',
+                                            }}
+                                            onMouseEnter={e => {
+                                              e.currentTarget.style.transform = 'scale(1.1)';
+                                              e.currentTarget.style.color = '#ffc107';
+                                            }}
+                                            onMouseLeave={e => {
+                                              e.currentTarget.style.transform = 'scale(1)';
+                                              e.currentTarget.style.color = isSelected ? '#ffc107' : '#dee2e6';
+                                            }}
+                                          >
+                                            <i className="fa fa-star" />
+                                          </button>
+                                        );
+                                      })}
+                                      <span className="ms-2 text-muted" style={{ fontSize: '0.9rem' }}>
+                                        {newReview.rating}/5 stars
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Message Input */}
+                                <div className="input-group">
+                                  <textarea
+                                    className="form-control"
+                                    rows={3}
+                                    value={newReview.comment}
+                                    onChange={e => setNewReview({ ...newReview, comment: e.target.value })}
+                                    placeholder="Write your review about this product..."
+                                    style={{
+                                      resize: 'none',
+                                      borderRadius: '15px 0 0 15px',
+                                      border: '2px solid #e9ecef',
+                                      fontSize: '0.95rem',
+                                      lineHeight: '1.5',
+                                      transition: 'border-color 0.3s ease',
+                                    }}
+                                    onFocus={e => {
+                                      e.target.style.borderColor = '#667eea';
+                                    }}
+                                    onBlur={e => {
+                                      e.target.style.borderColor = '#e9ecef';
+                                    }}
+                                  />
+                                  <Button
+                                    variant="primary"
+                                    onClick={handleSubmitReviewClick}
+                                    disabled={submittingReview || !newReview.comment.trim() || newReview.rating < 1}
+                                    style={{
+                                      borderRadius: '0 15px 15px 0',
+                                      padding: '12px 20px',
+                                      fontWeight: '600',
+                                      background:
+                                        newReview.rating < 1 || !newReview.comment.trim()
+                                          ? 'linear-gradient(135deg, #6c757d 0%, #495057 100%)'
+                                          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                      border: 'none',
+                                      transition: 'all 0.3s ease',
+                                    }}
+                                  >
+                                    {submittingReview ? <i className="fa fa-spinner fa-spin"></i> : <i className="fa fa-paper-plane"></i>}
+                                  </Button>
+                                </div>
+
+                                <div className="mt-2 d-flex justify-content-between align-items-center">
+                                  <small className="text-muted">{newReview.comment.length}/500 characters</small>
+                                  {newReview.rating < 1 && (
+                                    <small className="text-warning">
+                                      <i className="fa fa-exclamation-triangle me-1"></i>
+                                      Please select a rating
+                                    </small>
+                                  )}
+                                </div>
+                              </Card.Body>
+                            </Card>
+                          ) : (
+                            <Card className="border-0 shadow-sm" style={{ borderRadius: '15px' }}>
+                              <Card.Body className="p-4 text-center">
+                                <div className="mb-3">
+                                  <div
+                                    className="mx-auto d-flex align-items-center justify-content-center rounded-circle mb-3"
+                                    style={{
+                                      width: '60px',
+                                      height: '60px',
+                                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                      color: 'white',
+                                      fontSize: '1.5rem',
+                                    }}
+                                  >
+                                    <i className="fa fa-lock"></i>
+                                  </div>
+                                  <h6 className="mb-2" style={{ fontWeight: '600', color: '#2c3e50' }}>
+                                    Login to Write a Review
+                                  </h6>
+                                  <p className="text-muted mb-3" style={{ fontSize: '0.9rem' }}>
+                                    You need to login to share your review about this product
+                                  </p>
+                                  <div className="d-flex gap-2 justify-content-center">
+                                    <Link to={`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`}>
+                                      <Button
+                                        variant="primary"
+                                        style={{
+                                          borderRadius: '25px',
+                                          padding: '8px 20px',
+                                          fontWeight: '600',
+                                        }}
+                                      >
+                                        <i className="fa fa-sign-in me-2"></i>
+                                        Login
+                                      </Button>
+                                    </Link>
+                                    <Link to="/register">
+                                      <Button
+                                        variant="outline-primary"
+                                        style={{
+                                          borderRadius: '25px',
+                                          padding: '8px 20px',
+                                          fontWeight: '600',
+                                        }}
+                                      >
+                                        <i className="fa fa-user-plus me-2"></i>
+                                        Sign Up
+                                      </Button>
+                                    </Link>
+                                  </div>
+                                </div>
+                              </Card.Body>
+                            </Card>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

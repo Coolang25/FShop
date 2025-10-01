@@ -96,12 +96,24 @@ const LoginModal = (props: ILoginModalProps) => {
           </Alert>
         </ModalBody>
         <ModalFooter>
-          <Button color="secondary" onClick={handleClose} tabIndex={1}>
-            <Translate contentKey="entity.action.cancel">Cancel</Translate>
-          </Button>{' '}
-          <Button color="primary" type="submit" data-cy="submit">
-            <Translate contentKey="login.form.button">Sign in</Translate>
-          </Button>
+          <div className="w-100">
+            <div className="text-center mb-3">
+              <p className="mb-0">
+                Don&apos;t have an account?{' '}
+                <Link to="/account/register" className="text-primary fw-semibold">
+                  Sign Up
+                </Link>
+              </p>
+            </div>
+            <div className="d-flex justify-content-between">
+              <Button color="secondary" onClick={handleClose} tabIndex={1}>
+                <Translate contentKey="entity.action.cancel">Cancel</Translate>
+              </Button>
+              <Button color="primary" type="submit" data-cy="submit">
+                <Translate contentKey="login.form.button">Sign in</Translate>
+              </Button>
+            </div>
+          </div>
         </ModalFooter>
       </Form>
     </Modal>

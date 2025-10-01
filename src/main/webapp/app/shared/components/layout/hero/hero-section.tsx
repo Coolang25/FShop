@@ -1,7 +1,14 @@
 import React from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 
 const HeroSection: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleShopNow = () => {
+    navigate('/shop');
+  };
+
   return (
     <section className="hero-section">
       <div
@@ -30,6 +37,7 @@ const HeroSection: React.FC = () => {
                     variant="primary"
                     size="lg"
                     className="me-3 mb-2"
+                    onClick={handleShopNow}
                     style={{
                       padding: '12px 30px',
                       borderRadius: '50px',
@@ -39,20 +47,6 @@ const HeroSection: React.FC = () => {
                     }}
                   >
                     Shop Now
-                  </Button>
-                  <Button
-                    variant="outline-light"
-                    size="lg"
-                    className="mb-2"
-                    style={{
-                      padding: '12px 30px',
-                      borderRadius: '50px',
-                      fontWeight: '600',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                    }}
-                  >
-                    View Collection
                   </Button>
                 </div>
               </div>

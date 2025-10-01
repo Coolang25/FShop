@@ -1,41 +1,46 @@
 package com.quattrinh.shop.service.mapper;
 
 import com.quattrinh.shop.domain.OrderItem;
-import com.quattrinh.shop.domain.ProductVariant;
-import com.quattrinh.shop.domain.ShopOrder;
 import com.quattrinh.shop.service.dto.OrderItemDTO;
 import com.quattrinh.shop.service.dto.ProductVariantDTO;
 import com.quattrinh.shop.service.dto.ShopOrderDTO;
-import java.util.List;
 import org.mapstruct.*;
 
 /**
  * Mapper for the entity {@link OrderItem} and its DTO {@link OrderItemDTO}.
  */
 @Mapper(componentModel = "spring")
-public interface OrderItemMapper {
-    @Mapping(target = "order", source = "order", qualifiedByName = "shopOrderId")
-    @Mapping(target = "variant", source = "variant", qualifiedByName = "productVariantSku")
+public interface OrderItemMapper extends EntityMapper<OrderItemDTO, OrderItem> {
+    @Mapping(target = "order", source = "order", qualifiedByName = "orderId")
+    @Mapping(target = "variant", source = "variant", qualifiedByName = "variantId")
     OrderItemDTO toDto(OrderItem s);
 
-    @Named("shopOrderId")
+    @Named("orderId")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
-    ShopOrderDTO toDtoShopOrderId(ShopOrder shopOrder);
+    ShopOrderDTO toDtoOrderId(com.quattrinh.shop.domain.ShopOrder shopOrder);
 
-    @Named("productVariantSku")
+    @Named("variantId")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
     @Mapping(target = "sku", source = "sku")
-    ProductVariantDTO toDtoProductVariantSku(ProductVariant productVariant);
+    @Mapping(target = "price", source = "price")
+    @Mapping(target = "stock", source = "stock")
+    @Mapping(target = "imageUrl", source = "imageUrl")
+    @Mapping(target = "isActive", source = "isActive")
+    @Mapping(target = "product", source = "product", qualifiedByName = "productId")
+    @Mapping(target = "attributeValues", ignore = true)
+    ProductVariantDTO toDtoVariantId(com.quattrinh.shop.domain.ProductVariant productVariant);
 
-    OrderItem toEntity(OrderItemDTO dto);
-
-    List<OrderItem> toEntity(List<OrderItemDTO> dtoList);
-
-    List<OrderItemDTO> toDto(List<OrderItem> entityList);
-
-    @Named("partialUpdate")
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void partialUpdate(@MappingTarget OrderItem entity, OrderItemDTO dto);
+    @Named("productId")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "description", ignore = true)
+    @Mapping(target = "basePrice", ignore = true)
+    @Mapping(target = "imageUrl", ignore = true)
+    @Mapping(target = "categories", ignore = true)
+    @Mapping(target = "variants", ignore = true)
+    @Mapping(target = "isActive", ignore = true)
+    com.quattrinh.shop.service.dto.ProductDTO toDtoProductId(com.quattrinh.shop.domain.Product product);
 }

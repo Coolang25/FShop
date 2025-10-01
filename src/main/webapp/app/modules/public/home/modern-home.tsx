@@ -22,9 +22,6 @@ export const ModernHome = () => {
 
       {/* Testimonials */}
       <TestimonialsSection />
-
-      {/* Newsletter */}
-      <NewsletterSection />
     </div>
   );
 };

@@ -30,14 +30,27 @@ public interface ShopOrderRepository extends JpaRepository<ShopOrder, Long>, Jpa
     }
 
     @Query(
-        value = "select shopOrder from ShopOrder shopOrder left join fetch shopOrder.user",
+        value = "select shopOrder from ShopOrder shopOrder left join fetch shopOrder.user left join fetch shopOrder.orderItems left join fetch shopOrder.orderItems.variant left join fetch shopOrder.orderItems.variant.product",
         countQuery = "select count(shopOrder) from ShopOrder shopOrder"
     )
     Page<ShopOrder> findAllWithToOneRelationships(Pageable pageable);
 
-    @Query("select shopOrder from ShopOrder shopOrder left join fetch shopOrder.user")
+    @Query(
+        "select shopOrder from ShopOrder shopOrder left join fetch shopOrder.user left join fetch shopOrder.orderItems left join fetch shopOrder.orderItems.variant left join fetch shopOrder.orderItems.variant.product"
+    )
     List<ShopOrder> findAllWithToOneRelationships();
 
-    @Query("select shopOrder from ShopOrder shopOrder left join fetch shopOrder.user where shopOrder.id =:id")
+    @Query(
+        "select shopOrder from ShopOrder shopOrder left join fetch shopOrder.user left join fetch shopOrder.orderItems left join fetch shopOrder.orderItems.variant left join fetch shopOrder.orderItems.variant.product where shopOrder.id =:id"
+    )
     Optional<ShopOrder> findOneWithToOneRelationships(@Param("id") Long id);
+
+    @Query("select shopOrder from ShopOrder shopOrder where shopOrder.user.id = :userId order by shopOrder.createdAt desc")
+    Page<ShopOrder> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
+
+    @Query(
+        value = "select shopOrder from ShopOrder shopOrder left join fetch shopOrder.user left join fetch shopOrder.orderItems left join fetch shopOrder.orderItems.variant left join fetch shopOrder.orderItems.variant.product where shopOrder.user.id = :userId order by shopOrder.createdAt desc",
+        countQuery = "select count(shopOrder) from ShopOrder shopOrder where shopOrder.user.id = :userId"
+    )
+    Page<ShopOrder> findByUserIdWithEagerRelationshipsOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
 }

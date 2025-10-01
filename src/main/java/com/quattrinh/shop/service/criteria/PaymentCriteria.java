@@ -68,8 +68,6 @@ public class PaymentCriteria implements Serializable, Criteria {
 
     private StringFilter transactionId;
 
-    private InstantFilter createdAt;
-
     private LongFilter orderId;
 
     private Boolean distinct;
@@ -82,7 +80,6 @@ public class PaymentCriteria implements Serializable, Criteria {
         this.status = other.optionalStatus().map(PaymentStatusFilter::copy).orElse(null);
         this.amount = other.optionalAmount().map(BigDecimalFilter::copy).orElse(null);
         this.transactionId = other.optionalTransactionId().map(StringFilter::copy).orElse(null);
-        this.createdAt = other.optionalCreatedAt().map(InstantFilter::copy).orElse(null);
         this.orderId = other.optionalOrderId().map(LongFilter::copy).orElse(null);
         this.distinct = other.distinct;
     }
@@ -187,25 +184,6 @@ public class PaymentCriteria implements Serializable, Criteria {
         this.transactionId = transactionId;
     }
 
-    public InstantFilter getCreatedAt() {
-        return createdAt;
-    }
-
-    public Optional<InstantFilter> optionalCreatedAt() {
-        return Optional.ofNullable(createdAt);
-    }
-
-    public InstantFilter createdAt() {
-        if (createdAt == null) {
-            setCreatedAt(new InstantFilter());
-        }
-        return createdAt;
-    }
-
-    public void setCreatedAt(InstantFilter createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LongFilter getOrderId() {
         return orderId;
     }
@@ -259,7 +237,6 @@ public class PaymentCriteria implements Serializable, Criteria {
             Objects.equals(status, that.status) &&
             Objects.equals(amount, that.amount) &&
             Objects.equals(transactionId, that.transactionId) &&
-            Objects.equals(createdAt, that.createdAt) &&
             Objects.equals(orderId, that.orderId) &&
             Objects.equals(distinct, that.distinct)
         );
@@ -267,7 +244,7 @@ public class PaymentCriteria implements Serializable, Criteria {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, method, status, amount, transactionId, createdAt, orderId, distinct);
+        return Objects.hash(id, method, status, amount, transactionId, orderId, distinct);
     }
 
     // prettier-ignore
@@ -279,7 +256,6 @@ public class PaymentCriteria implements Serializable, Criteria {
             optionalStatus().map(f -> "status=" + f + ", ").orElse("") +
             optionalAmount().map(f -> "amount=" + f + ", ").orElse("") +
             optionalTransactionId().map(f -> "transactionId=" + f + ", ").orElse("") +
-            optionalCreatedAt().map(f -> "createdAt=" + f + ", ").orElse("") +
             optionalOrderId().map(f -> "orderId=" + f + ", ").orElse("") +
             optionalDistinct().map(f -> "distinct=" + f + ", ").orElse("") +
         "}";

@@ -45,6 +45,7 @@ const ProductList: React.FC = () => {
         return (
           <ProductItem
             key={product.id || idx}
+            id={product.id}
             title={product.name || 'Product'}
             price={`$${product.basePrice || 0}`}
             oldPrice={product.oldPrice ? `$${product.oldPrice}` : undefined}

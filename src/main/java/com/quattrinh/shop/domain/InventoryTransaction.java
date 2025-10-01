@@ -9,7 +9,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "inventory_transactions")
-public class InventoryTransaction implements Serializable {
+public class InventoryTransaction extends AbstractAuditingEntity<Long> {
 
     private static final long serialVersionUID = 1L;
 

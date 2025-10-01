@@ -3,6 +3,7 @@ package com.quattrinh.shop.domain;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.List;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -13,7 +14,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 @Table(name = "carts")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
-public class Cart implements Serializable {
+public class Cart extends AbstractAuditingEntity<Long> {
 
     private static final long serialVersionUID = 1L;
 
@@ -22,15 +23,12 @@ public class Cart implements Serializable {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "created_at")
-    private Instant createdAt;
-
-    @Column(name = "updated_at")
-    private Instant updatedAt;
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(unique = true)
     private User user;
+
+    @OneToMany(mappedBy = "cart", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<CartItem> items;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -47,32 +45,6 @@ public class Cart implements Serializable {
         this.id = id;
     }
 
-    public Instant getCreatedAt() {
-        return this.createdAt;
-    }
-
-    public Cart createdAt(Instant createdAt) {
-        this.setCreatedAt(createdAt);
-        return this;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return this.updatedAt;
-    }
-
-    public Cart updatedAt(Instant updatedAt) {
-        this.setUpdatedAt(updatedAt);
-        return this;
-    }
-
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     public User getUser() {
         return this.user;
     }
@@ -83,6 +55,19 @@ public class Cart implements Serializable {
 
     public Cart user(User user) {
         this.setUser(user);
+        return this;
+    }
+
+    public List<CartItem> getItems() {
+        return this.items;
+    }
+
+    public void setItems(List<CartItem> items) {
+        this.items = items;
+    }
+
+    public Cart items(List<CartItem> items) {
+        this.setItems(items);
         return this;
     }
 
@@ -110,8 +95,6 @@ public class Cart implements Serializable {
     public String toString() {
         return "Cart{" +
             "id=" + getId() +
-            ", createdAt='" + getCreatedAt() + "'" +
-            ", updatedAt='" + getUpdatedAt() + "'" +
             "}";
     }
 }

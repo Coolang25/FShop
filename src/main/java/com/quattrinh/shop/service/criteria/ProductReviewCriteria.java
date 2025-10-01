@@ -26,10 +26,6 @@ public class ProductReviewCriteria implements Serializable, Criteria {
 
     private IntegerFilter rating;
 
-    private InstantFilter createdAt;
-
-    private InstantFilter updatedAt;
-
     private LongFilter productId;
 
     private LongFilter userId;
@@ -41,8 +37,6 @@ public class ProductReviewCriteria implements Serializable, Criteria {
     public ProductReviewCriteria(ProductReviewCriteria other) {
         this.id = other.optionalId().map(LongFilter::copy).orElse(null);
         this.rating = other.optionalRating().map(IntegerFilter::copy).orElse(null);
-        this.createdAt = other.optionalCreatedAt().map(InstantFilter::copy).orElse(null);
-        this.updatedAt = other.optionalUpdatedAt().map(InstantFilter::copy).orElse(null);
         this.productId = other.optionalProductId().map(LongFilter::copy).orElse(null);
         this.userId = other.optionalUserId().map(LongFilter::copy).orElse(null);
         this.distinct = other.distinct;
@@ -89,44 +83,6 @@ public class ProductReviewCriteria implements Serializable, Criteria {
 
     public void setRating(IntegerFilter rating) {
         this.rating = rating;
-    }
-
-    public InstantFilter getCreatedAt() {
-        return createdAt;
-    }
-
-    public Optional<InstantFilter> optionalCreatedAt() {
-        return Optional.ofNullable(createdAt);
-    }
-
-    public InstantFilter createdAt() {
-        if (createdAt == null) {
-            setCreatedAt(new InstantFilter());
-        }
-        return createdAt;
-    }
-
-    public void setCreatedAt(InstantFilter createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public InstantFilter getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public Optional<InstantFilter> optionalUpdatedAt() {
-        return Optional.ofNullable(updatedAt);
-    }
-
-    public InstantFilter updatedAt() {
-        if (updatedAt == null) {
-            setUpdatedAt(new InstantFilter());
-        }
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(InstantFilter updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
     public LongFilter getProductId() {
@@ -198,8 +154,6 @@ public class ProductReviewCriteria implements Serializable, Criteria {
         return (
             Objects.equals(id, that.id) &&
             Objects.equals(rating, that.rating) &&
-            Objects.equals(createdAt, that.createdAt) &&
-            Objects.equals(updatedAt, that.updatedAt) &&
             Objects.equals(productId, that.productId) &&
             Objects.equals(userId, that.userId) &&
             Objects.equals(distinct, that.distinct)
@@ -208,7 +162,7 @@ public class ProductReviewCriteria implements Serializable, Criteria {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, rating, createdAt, updatedAt, productId, userId, distinct);
+        return Objects.hash(id, rating, productId, userId, distinct);
     }
 
     // prettier-ignore
@@ -217,8 +171,6 @@ public class ProductReviewCriteria implements Serializable, Criteria {
         return "ProductReviewCriteria{" +
             optionalId().map(f -> "id=" + f + ", ").orElse("") +
             optionalRating().map(f -> "rating=" + f + ", ").orElse("") +
-            optionalCreatedAt().map(f -> "createdAt=" + f + ", ").orElse("") +
-            optionalUpdatedAt().map(f -> "updatedAt=" + f + ", ").orElse("") +
             optionalProductId().map(f -> "productId=" + f + ", ").orElse("") +
             optionalUserId().map(f -> "userId=" + f + ", ").orElse("") +
             optionalDistinct().map(f -> "distinct=" + f + ", ").orElse("") +

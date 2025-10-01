@@ -20,9 +20,9 @@ public class ProductReviewDTO implements Serializable {
 
     private String comment;
 
-    private Instant createdAt;
+    private Instant createdDate;
 
-    private Instant updatedAt;
+    private Instant lastModifiedDate;
 
     private ProductDTO product;
 
@@ -52,20 +52,20 @@ public class ProductReviewDTO implements Serializable {
         this.comment = comment;
     }
 
-    public Instant getCreatedAt() {
-        return createdAt;
+    public Instant getCreatedDate() {
+        return createdDate;
     }
 
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
     }
 
-    public Instant getUpdatedAt() {
-        return updatedAt;
+    public Instant getLastModifiedDate() {
+        return lastModifiedDate;
     }
 
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setLastModifiedDate(Instant lastModifiedDate) {
+        this.lastModifiedDate = lastModifiedDate;
     }
 
     public ProductDTO getProduct() {
@@ -112,8 +112,8 @@ public class ProductReviewDTO implements Serializable {
             "id=" + getId() +
             ", rating=" + getRating() +
             ", comment='" + getComment() + "'" +
-            ", createdAt='" + getCreatedAt() + "'" +
-            ", updatedAt='" + getUpdatedAt() + "'" +
+            ", createdDate='" + getCreatedDate() + "'" +
+            ", lastModifiedDate='" + getLastModifiedDate() + "'" +
             ", product=" + getProduct() +
             ", user=" + getUser() +
             "}";

@@ -27,6 +27,15 @@ export const getEntities = createAsyncThunk(
   { serializeError: serializeAxiosError },
 );
 
+export const getAllEntities = createAsyncThunk(
+  'category/fetch_all_entities',
+  async () => {
+    const requestUrl = `${apiUrl}/all?cacheBuster=${new Date().getTime()}`;
+    return axios.get<ICategory[]>(requestUrl);
+  },
+  { serializeError: serializeAxiosError },
+);
+
 export const getEntity = createAsyncThunk(
   'category/fetch_entity',
   async (id: string | number) => {
@@ -77,6 +86,17 @@ export const deleteEntity = createAsyncThunk(
   { serializeError: serializeAxiosError },
 );
 
+export const activateEntity = createAsyncThunk(
+  'category/activate_entity',
+  async (id: string | number, thunkAPI) => {
+    const requestUrl = `${apiUrl}/${id}/activate`;
+    const result = await axios.put<ICategory>(requestUrl);
+    thunkAPI.dispatch(getEntities({}));
+    return result;
+  },
+  { serializeError: serializeAxiosError },
+);
+
 // slice
 
 export const CategorySlice = createEntitySlice({
@@ -102,6 +122,19 @@ export const CategorySlice = createEntitySlice({
           entities: data,
           totalItems: parseInt(headers['x-total-count'], 10),
         };
+      })
+      .addMatcher(isFulfilled(getAllEntities), (state, action) => {
+        const { data } = action.payload;
+
+        return {
+          ...state,
+          loading: false,
+          entities: data,
+          totalItems: data.length,
+        };
+      })
+      .addMatcher(isPending(getAllEntities), state => {
+        state.loading = true;
       })
       .addMatcher(isFulfilled(createEntity, updateEntity, partialUpdateEntity), (state, action) => {
         state.updating = false;

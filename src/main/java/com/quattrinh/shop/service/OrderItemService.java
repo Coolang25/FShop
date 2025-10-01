@@ -4,6 +4,7 @@ import com.quattrinh.shop.domain.OrderItem;
 import com.quattrinh.shop.repository.OrderItemRepository;
 import com.quattrinh.shop.service.dto.OrderItemDTO;
 import com.quattrinh.shop.service.mapper.OrderItemMapper;
+import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,16 +14,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Service Implementation for managing {@link com.quattrinh.shop.domain.OrderItem}.
+ * Service Implementation for managing {@link OrderItem}.
  */
 @Service
 @Transactional
 public class OrderItemService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OrderItemService.class);
+    private final Logger log = LoggerFactory.getLogger(OrderItemService.class);
 
     private final OrderItemRepository orderItemRepository;
-
     private final OrderItemMapper orderItemMapper;
 
     public OrderItemService(OrderItemRepository orderItemRepository, OrderItemMapper orderItemMapper) {
@@ -37,7 +37,7 @@ public class OrderItemService {
      * @return the persisted entity.
      */
     public OrderItemDTO save(OrderItemDTO orderItemDTO) {
-        LOG.debug("Request to save OrderItem : {}", orderItemDTO);
+        log.debug("Request to save OrderItem : {}", orderItemDTO);
         OrderItem orderItem = orderItemMapper.toEntity(orderItemDTO);
         orderItem = orderItemRepository.save(orderItem);
         return orderItemMapper.toDto(orderItem);
@@ -50,7 +50,7 @@ public class OrderItemService {
      * @return the persisted entity.
      */
     public OrderItemDTO update(OrderItemDTO orderItemDTO) {
-        LOG.debug("Request to update OrderItem : {}", orderItemDTO);
+        log.debug("Request to update OrderItem : {}", orderItemDTO);
         OrderItem orderItem = orderItemMapper.toEntity(orderItemDTO);
         orderItem = orderItemRepository.save(orderItem);
         return orderItemMapper.toDto(orderItem);
@@ -63,7 +63,7 @@ public class OrderItemService {
      * @return the persisted entity.
      */
     public Optional<OrderItemDTO> partialUpdate(OrderItemDTO orderItemDTO) {
-        LOG.debug("Request to partially update OrderItem : {}", orderItemDTO);
+        log.debug("Request to partially update OrderItem : {}", orderItemDTO);
 
         return orderItemRepository
             .findById(orderItemDTO.getId())
@@ -77,12 +77,15 @@ public class OrderItemService {
     }
 
     /**
-     * Get all the orderItems with eager load of many-to-many relationships.
+     * Get all the orderItems.
      *
+     * @param pageable the pagination information.
      * @return the list of entities.
      */
-    public Page<OrderItemDTO> findAllWithEagerRelationships(Pageable pageable) {
-        return orderItemRepository.findAllWithEagerRelationships(pageable).map(orderItemMapper::toDto);
+    @Transactional(readOnly = true)
+    public Page<OrderItemDTO> findAll(Pageable pageable) {
+        log.debug("Request to get all OrderItems");
+        return orderItemRepository.findAll(pageable).map(orderItemMapper::toDto);
     }
 
     /**
@@ -93,8 +96,8 @@ public class OrderItemService {
      */
     @Transactional(readOnly = true)
     public Optional<OrderItemDTO> findOne(Long id) {
-        LOG.debug("Request to get OrderItem : {}", id);
-        return orderItemRepository.findOneWithEagerRelationships(id).map(orderItemMapper::toDto);
+        log.debug("Request to get OrderItem : {}", id);
+        return orderItemRepository.findById(id).map(orderItemMapper::toDto);
     }
 
     /**
@@ -103,7 +106,19 @@ public class OrderItemService {
      * @param id the id of the entity.
      */
     public void delete(Long id) {
-        LOG.debug("Request to delete OrderItem : {}", id);
+        log.debug("Request to delete OrderItem : {}", id);
         orderItemRepository.deleteById(id);
+    }
+
+    /**
+     * Get order items by order ID.
+     *
+     * @param orderId the order ID.
+     * @return the list of order items.
+     */
+    @Transactional(readOnly = true)
+    public List<OrderItemDTO> findByOrderId(Long orderId) {
+        log.debug("Request to get OrderItems for order: {}", orderId);
+        return orderItemRepository.findByOrderId(orderId).stream().map(orderItemMapper::toDto).toList();
     }
 }

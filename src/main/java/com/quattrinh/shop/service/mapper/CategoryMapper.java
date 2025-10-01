@@ -11,6 +11,7 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring")
 public interface CategoryMapper {
     @Mapping(target = "parentId", source = "parentCategory.id")
+    @Mapping(target = "isActive", source = "active")
     CategoryDTO toDto(Category s);
 
     @Mapping(target = "products", ignore = true)

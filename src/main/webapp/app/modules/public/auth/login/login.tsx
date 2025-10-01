@@ -25,7 +25,11 @@ export const Login = () => {
     navigate('/');
   };
 
-  const { from } = pageLocation.state || { from: { pathname: '/', search: pageLocation.search } };
+  // Get redirect URL from query parameter or state
+  const urlParams = new URLSearchParams(pageLocation.search);
+  const redirectUrl = urlParams.get('redirect');
+  const { from } = pageLocation.state || { from: { pathname: redirectUrl || '/', search: pageLocation.search } };
+
   if (isAuthenticated) {
     return <Navigate to={from} replace />;
   }

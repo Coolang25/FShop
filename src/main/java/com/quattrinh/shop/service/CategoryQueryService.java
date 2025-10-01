@@ -83,6 +83,9 @@ public class CategoryQueryService extends QueryService<Category> {
             if (criteria.getImage() != null) {
                 specification = specification.and(buildStringSpecification(criteria.getImage(), Category_.image));
             }
+            if (criteria.getIsActive() != null) {
+                specification = specification.and(buildSpecification(criteria.getIsActive(), root -> root.get("isActive")));
+            }
             if (criteria.getParentId() != null) {
                 specification = specification.and(
                     buildSpecification(criteria.getParentId(), root -> root.join(Category_.parentCategory, JoinType.LEFT).get(Category_.id))

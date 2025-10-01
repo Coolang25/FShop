@@ -20,8 +20,15 @@ const apiUrl = 'api/shop-orders';
 
 export const getEntities = createAsyncThunk(
   'shopOrder/fetch_entity_list',
-  async ({ page, size, sort }: IQueryParams) => {
-    const requestUrl = `${apiUrl}?${sort ? `page=${page}&size=${size}&sort=${sort}&` : ''}cacheBuster=${new Date().getTime()}`;
+  async ({ page, size, sort, eagerload }: IQueryParams & { eagerload?: boolean }) => {
+    const params = new URLSearchParams();
+    if (page !== undefined) params.append('page', page.toString());
+    if (size !== undefined) params.append('size', size.toString());
+    if (sort) params.append('sort', sort);
+    if (eagerload) params.append('eagerload', 'true');
+    params.append('cacheBuster', new Date().getTime().toString());
+
+    const requestUrl = `${apiUrl}?${params.toString()}`;
     return axios.get<IShopOrder[]>(requestUrl);
   },
   { serializeError: serializeAxiosError },
@@ -32,6 +39,15 @@ export const getEntity = createAsyncThunk(
   async (id: string | number) => {
     const requestUrl = `${apiUrl}/${id}`;
     return axios.get<IShopOrder>(requestUrl);
+  },
+  { serializeError: serializeAxiosError },
+);
+
+export const getEntitiesForAdmin = createAsyncThunk(
+  'shopOrder/fetch_entity_list_admin',
+  async () => {
+    const requestUrl = `${apiUrl}/admin`;
+    return axios.get<IShopOrder[]>(requestUrl);
   },
   { serializeError: serializeAxiosError },
 );
@@ -93,14 +109,14 @@ export const ShopOrderSlice = createEntitySlice({
         state.updateSuccess = true;
         state.entity = {};
       })
-      .addMatcher(isFulfilled(getEntities), (state, action) => {
+      .addMatcher(isFulfilled(getEntities, getEntitiesForAdmin), (state, action) => {
         const { data, headers } = action.payload;
 
         return {
           ...state,
           loading: false,
           entities: data,
-          totalItems: parseInt(headers['x-total-count'], 10),
+          totalItems: parseInt(headers['x-total-count'], 10) || data.length,
         };
       })
       .addMatcher(isFulfilled(createEntity, updateEntity, partialUpdateEntity), (state, action) => {
@@ -109,7 +125,7 @@ export const ShopOrderSlice = createEntitySlice({
         state.updateSuccess = true;
         state.entity = action.payload.data;
       })
-      .addMatcher(isPending(getEntities, getEntity), state => {
+      .addMatcher(isPending(getEntities, getEntitiesForAdmin, getEntity), state => {
         state.errorMessage = null;
         state.updateSuccess = false;
         state.loading = true;

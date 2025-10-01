@@ -87,6 +87,10 @@ public class ProductMapper {
         }
         product.setCategories(categories);
 
+        // IMPORTANT: Do NOT map variants here to preserve existing variants
+        // Variants should be managed separately through ProductVariantService
+        // This prevents foreign key constraint violations when variants are referenced by order_items
+
         return product;
     }
 
@@ -131,6 +135,10 @@ public class ProductMapper {
             }
             product.setCategories(categories);
         }
+
+        // IMPORTANT: Do NOT update variants here to preserve existing variants
+        // Variants should be managed separately through ProductVariantService
+        // This prevents foreign key constraint violations when variants are referenced by order_items
 
         return product;
     }

@@ -118,6 +118,7 @@ public class ProductVariantService {
         // Update basic fields
         existingVariant.setSku(productVariantDTO.getSku());
         existingVariant.setPrice(productVariantDTO.getPrice());
+        existingVariant.setCostPrice(productVariantDTO.getCostPrice());
         existingVariant.setStock(productVariantDTO.getStock());
         existingVariant.setImageUrl(productVariantDTO.getImageUrl());
         existingVariant.setIsActive(productVariantDTO.getIsActive());
@@ -184,6 +185,9 @@ public class ProductVariantService {
                 }
                 if (productVariantDTO.getPrice() != null) {
                     existingProductVariant.setPrice(productVariantDTO.getPrice());
+                }
+                if (productVariantDTO.getCostPrice() != null) {
+                    existingProductVariant.setCostPrice(productVariantDTO.getCostPrice());
                 }
                 if (productVariantDTO.getStock() != null) {
                     existingProductVariant.setStock(productVariantDTO.getStock());

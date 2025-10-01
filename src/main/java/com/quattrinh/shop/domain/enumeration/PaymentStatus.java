@@ -5,6 +5,8 @@ package com.quattrinh.shop.domain.enumeration;
  */
 public enum PaymentStatus {
     PENDING,
-    SUCCESS,
+    COMPLETED,
     FAILED,
+    REFUNDED,
+    CANCELLED,
 }

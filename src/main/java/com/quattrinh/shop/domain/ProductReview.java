@@ -15,7 +15,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 @Table(name = "product_reviews")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
-public class ProductReview implements Serializable {
+public class ProductReview extends AbstractAuditingEntity<Long> {
 
     private static final long serialVersionUID = 1L;
 
@@ -32,12 +32,6 @@ public class ProductReview implements Serializable {
 
     @Column(name = "comment", columnDefinition = "text")
     private String comment;
-
-    @Column(name = "created_at")
-    private Instant createdAt;
-
-    @Column(name = "updated_at")
-    private Instant updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnoreProperties(value = { "categories" }, allowSetters = true)
@@ -85,32 +79,6 @@ public class ProductReview implements Serializable {
 
     public void setComment(String comment) {
         this.comment = comment;
-    }
-
-    public Instant getCreatedAt() {
-        return this.createdAt;
-    }
-
-    public ProductReview createdAt(Instant createdAt) {
-        this.setCreatedAt(createdAt);
-        return this;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return this.updatedAt;
-    }
-
-    public ProductReview updatedAt(Instant updatedAt) {
-        this.setUpdatedAt(updatedAt);
-        return this;
-    }
-
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
     public Product getProduct() {
@@ -165,8 +133,8 @@ public class ProductReview implements Serializable {
             "id=" + getId() +
             ", rating=" + getRating() +
             ", comment='" + getComment() + "'" +
-            ", createdAt='" + getCreatedAt() + "'" +
-            ", updatedAt='" + getUpdatedAt() + "'" +
+            ", createdDate='" + getCreatedDate() + "'" +
+            ", lastModifiedDate='" + getLastModifiedDate() + "'" +
             "}";
     }
 }

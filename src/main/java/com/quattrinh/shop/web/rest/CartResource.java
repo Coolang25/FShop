@@ -8,7 +8,9 @@ import com.quattrinh.shop.service.dto.CartDTO;
 import com.quattrinh.shop.web.rest.errors.BadRequestAlertException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -168,6 +170,119 @@ public class CartResource {
         LOG.debug("REST request to get Cart : {}", id);
         Optional<CartDTO> cartDTO = cartService.findOne(id);
         return ResponseUtil.wrapOrNotFound(cartDTO);
+    }
+
+    /**
+     * {@code GET  /carts/user/{userId} : get cart by user ID.
+     *
+     * @param userId the user ID.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the cartDTO, or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<CartDTO> getCartByUserId(@PathVariable Long userId) {
+        LOG.debug("REST request to get Cart by user ID: {}", userId);
+
+        Optional<CartDTO> cartDTO = cartService.findByUserId(userId);
+        return cartDTO.map(cart -> ResponseEntity.ok().body(cart)).orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * {@code POST  /carts/add-item} : Add item to user's cart.
+     *
+     * @param userId the user ID.
+     * @param variantId the product variant ID.
+     * @param quantity the quantity to add.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the cartDTO.
+     */
+    @PostMapping("/add-item")
+    public ResponseEntity<CartDTO> addItemToCart(@RequestParam Long userId, @RequestParam Long variantId, @RequestParam Integer quantity) {
+        LOG.debug("REST request to add item to cart: userId={}, variantId={}, quantity={}", userId, variantId, quantity);
+
+        try {
+            CartDTO cartDTO = cartService.addItemToCart(userId, variantId, quantity);
+            return ResponseEntity.ok().body(cartDTO);
+        } catch (Exception e) {
+            LOG.error("Error adding item to cart", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * {@code GET  /carts/count/user/{userId}} : Get cart item count for user.
+     *
+     * @param userId the user ID.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the count.
+     */
+    @GetMapping("/count/user/{userId}")
+    public ResponseEntity<Integer> getCartItemCount(@PathVariable Long userId) {
+        LOG.debug("REST request to get cart item count for user: {}", userId);
+
+        try {
+            Integer count = cartService.getCartItemCount(userId);
+            return ResponseEntity.ok().body(count);
+        } catch (Exception e) {
+            LOG.error("Error getting cart item count", e);
+            return ResponseEntity.ok().body(0);
+        }
+    }
+
+    /**
+     * {@code GET  /carts/test/user/{userId}} : Test endpoint to check if user exists.
+     *
+     * @param userId the user ID.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the test response.
+     */
+    @GetMapping("/test/user/{userId}")
+    public ResponseEntity<Map<String, Object>> testCartEndpoint(@PathVariable Long userId) {
+        LOG.debug("REST request to test cart endpoint for user: {}", userId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", userId);
+        response.put("message", "Cart API is working");
+        response.put("timestamp", java.time.Instant.now());
+
+        // Test if cart exists
+        try {
+            Optional<CartDTO> cart = cartService.getCartWithItems(userId);
+            response.put("cartExists", cart.isPresent());
+            if (cart.isPresent()) {
+                response.put("cartId", cart.get().getId());
+                response.put("itemsCount", cart.get().getItems() != null ? cart.get().getItems().size() : 0);
+            }
+        } catch (Exception e) {
+            response.put("error", e.getMessage());
+        }
+
+        return ResponseEntity.ok().body(response);
+    }
+
+    /**
+     * {@code GET  /carts/with-items/user/{userId}} : Get cart with items for user.
+     *
+     * @param userId the user ID.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the cart with items.
+     */
+    @GetMapping("/with-items/user/{userId}")
+    public ResponseEntity<CartDTO> getCartWithItems(@PathVariable Long userId) {
+        LOG.debug("REST request to get cart with items for user: {}", userId);
+
+        try {
+            Optional<CartDTO> cartDTO = cartService.getCartWithItems(userId);
+            if (cartDTO.isPresent()) {
+                LOG.debug("Found cart with {} items", cartDTO.get().getItems() != null ? cartDTO.get().getItems().size() : 0);
+                return ResponseEntity.ok().body(cartDTO.get());
+            } else {
+                LOG.debug("No cart found for user: {}", userId);
+                // Return empty cart instead of 404
+                CartDTO emptyCart = new CartDTO();
+                emptyCart.setId(null); // Set to null when no cart exists
+                emptyCart.setItems(new java.util.ArrayList<>());
+                return ResponseEntity.ok().body(emptyCart);
+            }
+        } catch (Exception e) {
+            LOG.error("Error getting cart with items", e);
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     /**

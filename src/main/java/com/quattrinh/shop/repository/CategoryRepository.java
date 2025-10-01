@@ -17,4 +17,18 @@ public interface CategoryRepository extends JpaRepository<Category, Long>, JpaSp
      * @return list of parent categories
      */
     List<Category> findByParentCategoryIsNull();
+
+    /**
+     * Find all active categories that have no parent category (root categories).
+     *
+     * @return list of active parent categories
+     */
+    List<Category> findByParentCategoryIsNullAndIsActiveTrue();
+
+    /**
+     * Find all active categories.
+     *
+     * @return list of active categories
+     */
+    List<Category> findByIsActiveTrue();
 }

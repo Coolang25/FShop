@@ -18,7 +18,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 @Table(name = "payments")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
-public class Payment implements Serializable {
+public class Payment extends AbstractAuditingEntity<Long> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -43,9 +43,6 @@ public class Payment implements Serializable {
 
     @Column(name = "transaction_id")
     private String transactionId;
-
-    @Column(name = "created_at")
-    private Instant createdAt;
 
     @JsonIgnoreProperties(value = { "user", "payment" }, allowSetters = true)
     @OneToOne(fetch = FetchType.LAZY)
@@ -119,19 +116,6 @@ public class Payment implements Serializable {
         this.transactionId = transactionId;
     }
 
-    public Instant getCreatedAt() {
-        return this.createdAt;
-    }
-
-    public Payment createdAt(Instant createdAt) {
-        this.setCreatedAt(createdAt);
-        return this;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public ShopOrder getOrder() {
         return this.order;
     }
@@ -173,7 +157,6 @@ public class Payment implements Serializable {
             ", status='" + getStatus() + "'" +
             ", amount=" + getAmount() +
             ", transactionId='" + getTransactionId() + "'" +
-            ", createdAt='" + getCreatedAt() + "'" +
             "}";
     }
 }

@@ -18,6 +18,8 @@ public class CategoryDTO implements Serializable {
 
     private String image;
 
+    private Boolean isActive = true;
+
     private Long parentId;
 
     private Long productCount;
@@ -44,6 +46,14 @@ public class CategoryDTO implements Serializable {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public Long getParentId() {

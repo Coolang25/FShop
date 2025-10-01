@@ -27,8 +27,6 @@ public class PaymentDTO implements Serializable {
 
     private String transactionId;
 
-    private Instant createdAt;
-
     private ShopOrderDTO order;
 
     public Long getId() {
@@ -71,14 +69,6 @@ public class PaymentDTO implements Serializable {
         this.transactionId = transactionId;
     }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public ShopOrderDTO getOrder() {
         return order;
     }
@@ -117,7 +107,6 @@ public class PaymentDTO implements Serializable {
             ", status='" + getStatus() + "'" +
             ", amount=" + getAmount() +
             ", transactionId='" + getTransactionId() + "'" +
-            ", createdAt='" + getCreatedAt() + "'" +
             ", order=" + getOrder() +
             "}";
     }

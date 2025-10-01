@@ -14,10 +14,6 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Long>, JpaSpecificationExecutor<Cart> {
-    default Optional<Cart> findOneWithEagerRelationships(Long id) {
-        return this.findOneWithToOneRelationships(id);
-    }
-
     default List<Cart> findAllWithEagerRelationships() {
         return this.findAllWithToOneRelationships();
     }
@@ -34,4 +30,12 @@ public interface CartRepository extends JpaRepository<Cart, Long>, JpaSpecificat
 
     @Query("select cart from Cart cart left join fetch cart.user where cart.id =:id")
     Optional<Cart> findOneWithToOneRelationships(@Param("id") Long id);
+
+    @Query(
+        "select cart from Cart cart left join fetch cart.user left join fetch cart.items left join fetch cart.items.variant left join fetch cart.items.variant.product where cart.id =:id"
+    )
+    Optional<Cart> findOneWithEagerRelationships(@Param("id") Long id);
+
+    @Query("select cart from Cart cart left join fetch cart.user where cart.user.id =:userId")
+    Optional<Cart> findByUserId(@Param("userId") Long userId);
 }

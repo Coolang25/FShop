@@ -84,6 +84,7 @@ const BestSellerSection: React.FC = () => {
             return (
               <ProductItem
                 key={product.id || index}
+                id={product.id}
                 title={product.name || 'Product'}
                 price={`$${product.basePrice || 0}`}
                 oldPrice={product.oldPrice ? `$${product.oldPrice}` : undefined}

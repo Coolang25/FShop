@@ -15,7 +15,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 @Table(name = "cart_items")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
-public class CartItem implements Serializable {
+public class CartItem extends AbstractAuditingEntity<Long> {
 
     private static final long serialVersionUID = 1L;
 

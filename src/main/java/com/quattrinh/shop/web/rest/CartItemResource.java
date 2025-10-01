@@ -91,6 +91,13 @@ public class CartItemResource {
         @Valid @RequestBody CartItemDTO cartItemDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to update CartItem : {}, {}", id, cartItemDTO);
+        LOG.debug(
+            "Request body details - ID: {}, Quantity: {}, Price: {}",
+            cartItemDTO.getId(),
+            cartItemDTO.getQuantity(),
+            cartItemDTO.getPrice()
+        );
+
         if (cartItemDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
@@ -103,6 +110,8 @@ public class CartItemResource {
         }
 
         cartItemDTO = cartItemService.update(cartItemDTO);
+        LOG.debug("Updated CartItem result: {}", cartItemDTO);
+
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, cartItemDTO.getId().toString()))
             .body(cartItemDTO);

@@ -78,6 +78,8 @@ interface ProductVariant {
   id?: number;
   sku?: string;
   price?: number;
+  costPrice?: number;
+  stock?: number;
   imageUrl?: string;
   isActive?: boolean;
   product?: any;
@@ -162,6 +164,7 @@ const ProductManagement = () => {
   const [variantForm, setVariantForm] = useState({
     sku: '',
     price: '',
+    costPrice: '',
     imageUrl: '',
     isActive: true,
     attributeValues: {} as { [attributeName: string]: { id: number; value: string } },
@@ -432,6 +435,7 @@ const ProductManagement = () => {
     setVariantForm({
       sku: '',
       price: product.basePrice?.toString() || '0',
+      costPrice: '0',
       imageUrl: '',
       isActive: true,
       attributeValues: {},
@@ -462,6 +466,7 @@ const ProductManagement = () => {
     setVariantForm({
       sku: variant.sku || '',
       price: variant.price?.toString() || '',
+      costPrice: variant.costPrice?.toString() || '0',
       imageUrl: variant.imageUrl || '',
       isActive: variant.isActive ?? true,
       attributeValues: attributeValuesForm,
@@ -485,6 +490,7 @@ const ProductManagement = () => {
     const variantData = {
       sku: variantForm.sku,
       price: parseFloat(variantForm.price),
+      costPrice: parseFloat(variantForm.costPrice),
       imageUrl: variantForm.imageUrl,
       isActive: variantForm.isActive,
       product: { id: selectedProduct.id },
@@ -493,9 +499,22 @@ const ProductManagement = () => {
 
     let result;
     if (editingVariant?.id) {
-      result = await dispatch(updateProductVariant({ ...variantData, id: editingVariant.id }));
+      // When updating, preserve the existing stock value
+      result = await dispatch(
+        updateProductVariant({
+          ...variantData,
+          id: editingVariant.id,
+          stock: editingVariant.stock, // Preserve existing stock
+        }),
+      );
     } else {
-      result = await dispatch(createProductVariant(variantData));
+      // When creating new variant, set default stock to 0
+      result = await dispatch(
+        createProductVariant({
+          ...variantData,
+          stock: 0,
+        }),
+      );
     }
 
     // Check if the operation was successful
@@ -518,12 +537,18 @@ const ProductManagement = () => {
     setEditingVariant(null);
   };
 
-  const handleDeleteVariant = async (product: Product, variant: ProductVariant) => {
+  const handleToggleVariantStatus = async (product: Product, variant: ProductVariant) => {
     if (variant.id) {
-      const result = await dispatch(deleteProductVariant(variant.id));
+      // Toggle the isActive status
+      const updatedVariant = {
+        ...variant,
+        isActive: !variant.isActive,
+      };
+
+      const result = await dispatch(updateProductVariant(updatedVariant));
 
       // Check if the operation was successful
-      if (deleteProductVariant.fulfilled.match(result)) {
+      if (updateProductVariant.fulfilled.match(result)) {
         // Refresh the products with variants to get updated data
         const refreshResult = await dispatch(getProductsWithVariants({ page: currentPage, size: 10, sort: 'id,asc', search: searchTerm }));
 
@@ -552,9 +577,9 @@ const ProductManagement = () => {
   const currentProducts = filteredProducts; // API already returns paginated results
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'VND',
+      currency: 'USD',
     }).format(amount);
   };
 
@@ -733,6 +758,7 @@ const ProductManagement = () => {
                       <th>SKU</th>
                       <th>Attributes</th>
                       <th>Price</th>
+                      <th>Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -753,10 +779,23 @@ const ProductManagement = () => {
                             ) : (
                               <span className="text-muted">No attributes</span>
                             )}
+                            <div className="mt-1">
+                              <Badge bg="info" text="white" className="small">
+                                Stock: {variant.stock || 0}
+                              </Badge>
+                            </div>
                           </div>
                         </td>
                         <td>
-                          <span className="fw-medium">{variant.price?.toLocaleString() || '0'} VND</span>
+                          <div>
+                            <div className="fw-medium">${variant.price?.toFixed(2) || '0.00'}</div>
+                            <small className="text-muted">Cost: ${variant.costPrice?.toFixed(2) || '0.00'}</small>
+                          </div>
+                        </td>
+                        <td>
+                          <Badge bg={variant.isActive ? 'success' : 'danger'} className="text-white">
+                            {variant.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
                         </td>
                         <td>
                           <div className="d-flex gap-1">
@@ -769,14 +808,14 @@ const ProductManagement = () => {
                               <FaEdit />
                             </Button>
                             <Button
-                              variant="outline-danger"
+                              variant={variant.isActive ? 'outline-danger' : 'outline-success'}
                               size="sm"
-                              title="Delete"
+                              title={variant.isActive ? 'Deactivate' : 'Activate'}
                               onClick={() => {
-                                void handleDeleteVariant(selectedProduct, variant);
+                                void handleToggleVariantStatus(selectedProduct, variant);
                               }}
                             >
-                              <FaTrash />
+                              {variant.isActive ? <FaTrash /> : <FaCheck />}
                             </Button>
                           </div>
                         </td>
@@ -896,7 +935,7 @@ const ProductManagement = () => {
                 <Row>
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Base Price (VNĐ) *</Form.Label>
+                      <Form.Label>Base Price (USD) *</Form.Label>
                       <Form.Control
                         type="number"
                         value={formData.basePrice}
@@ -1073,6 +1112,19 @@ const ProductManagement = () => {
                     value={variantForm.price}
                     onChange={e => setVariantForm({ ...variantForm, price: e.target.value })}
                     placeholder="Enter price"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Cost Price *</Form.Label>
+                  <Form.Control
+                    type="number"
+                    value={variantForm.costPrice}
+                    onChange={e => setVariantForm({ ...variantForm, costPrice: e.target.value })}
+                    placeholder="Enter cost price"
                   />
                 </Form.Group>
               </Col>

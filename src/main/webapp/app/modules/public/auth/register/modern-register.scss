@@ -1,0 +1,163 @@
+.modern-register-page {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 2rem 0;
+
+  .register-card {
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+
+    .register-title {
+      color: #2c3e50;
+      font-weight: 700;
+      font-size: 2rem;
+    }
+
+    .form-control {
+      border-radius: 10px;
+      border: 2px solid #e9ecef;
+      padding: 12px 16px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+
+      &:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+      }
+
+      &.is-invalid {
+        border-color: #dc3545;
+      }
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
+
+      &:disabled {
+        opacity: 0.7;
+        transform: none;
+        box-shadow: none;
+      }
+    }
+
+    .form-check-input {
+      border-radius: 6px;
+      border: 2px solid #e9ecef;
+
+      &:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+      }
+    }
+
+    .form-check-label {
+      color: #6c757d;
+      font-size: 0.9rem;
+      line-height: 1.4;
+
+      a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+
+    .text-primary {
+      color: #667eea !important;
+    }
+
+    .text-muted {
+      color: #6c757d !important;
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .modern-register-page {
+    padding: 1rem 0;
+
+    .register-card {
+      margin: 0 1rem;
+      border-radius: 15px;
+
+      .register-title {
+        font-size: 1.5rem;
+      }
+    }
+  }
+}
+
+// Animation for form elements
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.register-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+// Password strength bar styling
+.password-strength-bar {
+  margin-top: 8px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: #e9ecef;
+  overflow: hidden;
+
+  .strength-fill {
+    height: 100%;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+
+    &.weak {
+      background-color: #dc3545;
+      width: 25%;
+    }
+
+    &.fair {
+      background-color: #ffc107;
+      width: 50%;
+    }
+
+    &.good {
+      background-color: #17a2b8;
+      width: 75%;
+    }
+
+    &.strong {
+      background-color: #28a745;
+      width: 100%;
+    }
+  }
+}

@@ -51,9 +51,23 @@ public class CartItemService {
      */
     public CartItemDTO update(CartItemDTO cartItemDTO) {
         LOG.debug("Request to update CartItem : {}", cartItemDTO);
-        CartItem cartItem = cartItemMapper.toEntity(cartItemDTO);
-        cartItem = cartItemRepository.save(cartItem);
-        return cartItemMapper.toDto(cartItem);
+
+        // Get existing cart item to preserve cart and variant relationships
+        CartItem existingCartItem = cartItemRepository
+            .findById(cartItemDTO.getId())
+            .orElseThrow(() -> new RuntimeException("CartItem not found"));
+
+        // Update only the fields that should change
+        existingCartItem.setQuantity(cartItemDTO.getQuantity());
+        existingCartItem.setPrice(cartItemDTO.getPrice());
+
+        LOG.debug("Updated CartItem entity : {}", existingCartItem);
+        CartItem savedCartItem = cartItemRepository.save(existingCartItem);
+        LOG.debug("Saved CartItem entity : {}", savedCartItem);
+
+        CartItemDTO result = cartItemMapper.toDto(savedCartItem);
+        LOG.debug("Mapped result CartItemDTO : {}", result);
+        return result;
     }
 
     /**

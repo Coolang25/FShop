@@ -231,4 +231,41 @@ public class CategoryResource {
             .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))
             .build();
     }
+
+    /**
+     * {@code PUT  /categories/:id/activate} : activate the "id" category.
+     *
+     * @param id the id of the categoryDTO to activate.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)}.
+     */
+    @PutMapping("/{id}/activate")
+    public ResponseEntity<Void> activateCategory(@PathVariable("id") Long id) {
+        LOG.debug("REST request to activate Category : {}", id);
+        categoryService.activate(id);
+        return ResponseEntity.ok().headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString())).build();
+    }
+
+    /**
+     * {@code GET  /categories/admin} : get all categories for admin management (including inactive).
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of all categories in body.
+     */
+    @GetMapping("/admin")
+    public ResponseEntity<List<CategoryDTO>> getAllCategoriesForAdmin() {
+        LOG.debug("REST request to get all Categories for admin");
+        List<CategoryDTO> allCategories = categoryService.findAllParentCategories();
+        return ResponseEntity.ok().body(allCategories);
+    }
+
+    /**
+     * {@code GET  /categories/all} : get all categories including inactive ones and subcategories.
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of all categories in body.
+     */
+    @GetMapping("/all")
+    public ResponseEntity<List<CategoryDTO>> getAllCategoriesIncludingInactive() {
+        LOG.debug("REST request to get all Categories including inactive and subcategories");
+        List<CategoryDTO> allCategories = categoryService.findAllCategories();
+        return ResponseEntity.ok().body(allCategories);
+    }
 }

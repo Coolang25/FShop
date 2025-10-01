@@ -75,12 +75,6 @@ public class CartQueryService extends QueryService<Cart> {
             if (criteria.getId() != null) {
                 specification = specification.and(buildRangeSpecification(criteria.getId(), Cart_.id));
             }
-            if (criteria.getCreatedAt() != null) {
-                specification = specification.and(buildRangeSpecification(criteria.getCreatedAt(), Cart_.createdAt));
-            }
-            if (criteria.getUpdatedAt() != null) {
-                specification = specification.and(buildRangeSpecification(criteria.getUpdatedAt(), Cart_.updatedAt));
-            }
             if (criteria.getUserId() != null) {
                 specification = specification.and(
                     buildSpecification(criteria.getUserId(), root -> root.join(Cart_.user, JoinType.LEFT).get(User_.id))

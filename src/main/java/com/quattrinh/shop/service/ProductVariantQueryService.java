@@ -47,7 +47,7 @@ public class ProductVariantQueryService extends QueryService<ProductVariant> {
     public Page<ProductVariantDTO> findByCriteria(ProductVariantCriteria criteria, Pageable page) {
         LOG.debug("find by criteria : {}, page: {}", criteria, page);
         final Specification<ProductVariant> specification = createSpecification(criteria);
-        return productVariantRepository.findAll(specification, page).map(productVariantMapper::toDto);
+        return productVariantRepository.findAllWithToOneRelationships(page).map(productVariantMapper::toDto);
     }
 
     /**

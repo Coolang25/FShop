@@ -103,6 +103,10 @@ const AdminOrders: React.FC = () => {
     void handleUpdateStatus();
   };
 
+  const handleRefresh = () => {
+    dispatch(getEntities({}));
+  };
+
   const getTotalItems = (order: IShopOrder) => {
     return (order as any).orderItems?.reduce((total: number, item: any) => total + (item.quantity || 0), 0) || 0;
   };
@@ -169,7 +173,7 @@ const AdminOrders: React.FC = () => {
                   ))}
                 </Form.Select>
               </div>
-              <Button variant="outline-primary" onClick={() => dispatch(getEntities({}))} disabled={loading}>
+              <Button variant="outline-primary" onClick={handleRefresh} disabled={loading}>
                 <i className="fa fa-refresh me-2"></i>
                 Refresh
               </Button>

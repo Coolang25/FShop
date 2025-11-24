@@ -12,6 +12,7 @@ import shopOrder from 'app/entities/shop-order/shop-order.reducer';
 import orderItem from 'app/entities/order-item/order-item.reducer';
 import payment from 'app/entities/payment/payment.reducer';
 import chatbotLog from 'app/entities/chatbot-log/chatbot-log.reducer';
+import inventoryTransaction from 'app/entities/inventory-transaction/inventory-transaction.reducer';
 /* jhipster-needle-add-reducer-import - JHipster will add reducer here */
 
 const entitiesReducers = {
@@ -29,6 +30,7 @@ const entitiesReducers = {
   orderItem,
   payment,
   chatbotLog,
+  inventoryTransaction,
   /* jhipster-needle-add-reducer-combine - JHipster will add reducer here */
 };
 

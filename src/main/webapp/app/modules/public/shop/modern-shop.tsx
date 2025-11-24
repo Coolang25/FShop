@@ -22,7 +22,11 @@ const ModernShop: React.FC = () => {
   const [categories, setCategories] = useState<CategoryWithCount[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  // Initialize selectedCategory from URL parameter if present
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    const categoryParam = new URLSearchParams(window.location.search).get('category');
+    return categoryParam || 'all';
+  });
   const [sortBy, setSortBy] = useState('newest');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -35,6 +39,11 @@ const ModernShop: React.FC = () => {
 
     if (categoryParam) {
       setSelectedCategory(categoryParam);
+      setCurrentPage(1); // Reset to first page when category changes
+    } else {
+      // Reset to 'all' if no category param in URL
+      setSelectedCategory('all');
+      setCurrentPage(1);
     }
   }, [searchParams]);
 
@@ -96,9 +105,24 @@ const ModernShop: React.FC = () => {
 
       const response = await axios.get(`/api/products?${params.toString()}`);
       setProducts(response.data);
+
+      // Extract total count from response headers (JHipster pagination header)
+      // Axios converts header names to lowercase
+      const totalCountHeader = response.headers['x-total-count'] || response.headers['X-Total-Count'];
+      if (totalCountHeader) {
+        const total = typeof totalCountHeader === 'string' ? parseInt(totalCountHeader, 10) : totalCountHeader;
+        if (!isNaN(total) && total > 0) {
+          setTotalProducts(total);
+        }
+      } else {
+        // Fallback: if header not available, use products count (for current page only)
+        // This shouldn't happen with proper JHipster setup, but just in case
+        console.warn('x-total-count header not found in response');
+      }
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([]);
+      setTotalProducts(0);
     } finally {
       setLoading(false);
     }
@@ -108,36 +132,12 @@ const ModernShop: React.FC = () => {
     fetchProducts();
   }, [currentPage, itemsPerPage, selectedCategory, sortBy, debouncedSearchTerm]);
 
-  // Function to fetch total count with current filters
-  const fetchTotalCount = async () => {
-    try {
-      const params = new URLSearchParams();
-
-      if (selectedCategory !== 'all') {
-        params.append('categoriesId.equals', selectedCategory);
-      }
-
-      if (debouncedSearchTerm) {
-        params.append('name.contains', debouncedSearchTerm);
-      }
-
-      const response = await axios.get(`/api/products/count?${params.toString()}`);
-      setTotalProducts(response.data);
-    } catch (error) {
-      console.error('Error fetching total count:', error);
-    }
-  };
-
   useEffect(() => {
     // Fetch parent categories
     const fetchParentCategories = async () => {
       try {
         const response = await axios.get('/api/categories/parent');
         setCategories(response.data);
-
-        // Calculate total products for "All Products"
-        const totalResponse = await axios.get('/api/products/count');
-        setTotalProducts(totalResponse.data);
       } catch (error) {
         console.error('Error fetching parent categories:', error);
         // Fallback categories
@@ -147,20 +147,15 @@ const ModernShop: React.FC = () => {
           { id: 3, name: 'Accessories', productCount: 20 },
           { id: 4, name: 'Home & Living', productCount: 25 },
         ]);
-        setTotalProducts(125);
       }
     };
 
     fetchParentCategories();
   }, []);
 
-  // Update total count when filters change
-  useEffect(() => {
-    fetchTotalCount();
-  }, [selectedCategory, debouncedSearchTerm]);
-
   // Products are already filtered and sorted by API
   const displayProducts = products;
+  const startIndex = (currentPage - 1) * itemsPerPage;
   const totalPages = Math.ceil(totalProducts / itemsPerPage);
 
   const renderStars = (rating: number) => {
@@ -289,7 +284,14 @@ const ModernShop: React.FC = () => {
               {/* Results Header */}
               <div className="results-header mb-4">
                 <h5 className="mb-0">
-                  Showing {displayProducts.length} of {totalProducts} products
+                  {totalProducts > 0 ? (
+                    <>
+                      Showing {startIndex + 1} to {Math.min(startIndex + displayProducts.length, totalProducts)} of {totalProducts} products
+                      {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
+                    </>
+                  ) : (
+                    'No products found'
+                  )}
                 </h5>
               </div>
 

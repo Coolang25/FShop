@@ -42,7 +42,7 @@ public class ProductVariantMapper {
         dto.setAttributeValues(attributeValueDTOs);
 
         if (entity.getProduct() != null) {
-            dto.setProduct(new ProductDTO().id(entity.getProduct().getId()));
+            dto.setProduct(new ProductDTO().id(entity.getProduct().getId()).name(entity.getProduct().getName()));
         } else {
             dto.setProduct(null);
         }
@@ -74,7 +74,7 @@ public class ProductVariantMapper {
         dto.setAttributeValues(attributeValueDTOs);
 
         if (entity.getProduct() != null) {
-            dto.setProduct(new ProductDTO().id(entity.getProduct().getId()));
+            dto.setProduct(new ProductDTO().id(entity.getProduct().getId()).name(entity.getProduct().getName()));
         } else {
             dto.setProduct(null);
         }

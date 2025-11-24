@@ -100,6 +100,11 @@ public class ProductDTO implements Serializable {
         return this;
     }
 
+    public ProductDTO name(String name) {
+        this.setName(name);
+        return this;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

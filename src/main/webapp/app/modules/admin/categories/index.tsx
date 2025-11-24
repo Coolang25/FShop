@@ -380,10 +380,6 @@ const CategoryManagement = () => {
                   {category.isActive ? 'Active' : 'Inactive'}
                 </Badge>
               </h5>
-              <div className="d-flex align-items-center">
-                <FaTag className="me-1" style={{ fontSize: '0.8rem' }} />
-                <span style={{ fontSize: '0.9rem', opacity: '0.9' }}>{category.productCount} products</span>
-              </div>
             </div>
           </div>
           <div className="d-flex gap-2">

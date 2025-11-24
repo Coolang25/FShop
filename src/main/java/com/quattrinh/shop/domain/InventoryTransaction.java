@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.quattrinh.shop.domain.enumeration.TransactionType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import java.io.Serializable;
-import java.time.Instant;
 
 @Entity
 @Table(name = "inventory_transactions")
@@ -15,6 +13,7 @@ public class InventoryTransaction extends AbstractAuditingEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @Enumerated(EnumType.STRING)
@@ -30,10 +29,6 @@ public class InventoryTransaction extends AbstractAuditingEntity<Long> {
     @Column(name = "note", length = 1000)
     private String note;
 
-    @NotNull
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "variant_id")
     @JsonIgnoreProperties(value = { "product" }, allowSetters = true)
@@ -45,11 +40,11 @@ public class InventoryTransaction extends AbstractAuditingEntity<Long> {
     private ShopOrder order;
 
     public Long getId() {
-        return id;
+        return this.id;
     }
 
     public InventoryTransaction id(Long id) {
-        this.id = id;
+        this.setId(id);
         return this;
     }
 
@@ -80,15 +75,6 @@ public class InventoryTransaction extends AbstractAuditingEntity<Long> {
         return this;
     }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public InventoryTransaction createdAt(Instant createdAt) {
-        this.createdAt = createdAt;
-        return this;
-    }
-
     public ProductVariant getVariant() {
         return variant;
     }
@@ -105,5 +91,29 @@ public class InventoryTransaction extends AbstractAuditingEntity<Long> {
     public InventoryTransaction order(ShopOrder order) {
         this.order = order;
         return this;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setType(TransactionType type) {
+        this.type = type;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
+    public void setVariant(ProductVariant variant) {
+        this.variant = variant;
+    }
+
+    public void setOrder(ShopOrder order) {
+        this.order = order;
     }
 }

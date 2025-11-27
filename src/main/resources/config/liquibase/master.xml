@@ -46,6 +46,8 @@
     <include file="config/liquibase/changelog/20251003100000_added_is_active_column_to_category.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251004000000_add_cost_price_to_product_variant.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251127000000_add_reserved_to_product_variant.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251128000000_add_auto_increment_inventory_transaction_id.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251129000000_drop_created_at_inventory_transaction.xml" relativeToChangelogFile="false"/>
   <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>

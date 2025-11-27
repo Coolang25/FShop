@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Spinner, Alert, Table, Modal, Form } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Badge, Spinner, Table, Modal, Form } from 'react-bootstrap';
 import { useAppDispatch, useAppSelector } from 'app/config/store';
 import { IProductVariant } from 'app/shared/model/product-variant.model';
 import { IInventoryTransaction, TransactionType } from 'app/shared/model/inventory-transaction.model';
@@ -62,9 +62,23 @@ const StockManagement = () => {
     }
   };
 
+  const refetchVariants = () => {
+    dispatch(getProductVariants({ page: 0, size: 1000, sort: 'id,desc' }));
+  };
+
+  const computeAvailableToExport = (variant: IProductVariant | null) => {
+    if (!variant) {
+      return 0;
+    }
+    const stock = variant.stock ?? 0;
+    const reserved = variant.reserved ?? 0;
+    return Math.max(0, stock - reserved);
+  };
+
+  const availableToExportLimit = computeAvailableToExport(selectedVariant);
+
   const handleStockIn = async () => {
     if (!selectedVariant || quantity <= 0) {
-      alert('Vui lòng chọn sản phẩm và nhập số lượng hợp lệ');
       return;
     }
 
@@ -77,24 +91,23 @@ const StockManagement = () => {
 
     try {
       await dispatch(createInventoryTransaction(newTransaction));
+      refetchVariants();
       setShowStockInModal(false);
       setSelectedVariant(null);
       setQuantity(1);
       setNote('');
-      alert('Nhập kho thành công!');
     } catch (error) {
-      alert('Có lỗi xảy ra khi nhập kho!');
+      console.error('Nhập kho lỗi', error);
     }
   };
 
   const handleStockOut = async () => {
     if (!selectedVariant || quantity <= 0) {
-      alert('Vui lòng chọn sản phẩm và nhập số lượng hợp lệ');
       return;
     }
 
-    if (selectedVariant.stock && quantity > selectedVariant.stock) {
-      alert('Số lượng xuất kho không được vượt quá tồn kho hiện tại');
+    const currentAvailableToExport = computeAvailableToExport(selectedVariant);
+    if (quantity > currentAvailableToExport) {
       return;
     }
 
@@ -107,13 +120,13 @@ const StockManagement = () => {
 
     try {
       await dispatch(createInventoryTransaction(newTransaction));
+      refetchVariants();
       setShowStockOutModal(false);
       setSelectedVariant(null);
       setQuantity(1);
       setNote('');
-      alert('Xuất kho thành công!');
     } catch (error) {
-      alert('Có lỗi xảy ra khi xuất kho!');
+      console.error('Xuất kho lỗi', error);
     }
   };
 
@@ -229,6 +242,7 @@ const StockManagement = () => {
                     <th className="border-0 p-3">Sản Phẩm</th>
                     <th className="border-0 p-3">SKU</th>
                     <th className="border-0 p-3 text-center">Tồn Kho</th>
+                    <th className="border-0 p-3 text-center">Đặt chỗ</th>
                     <th className="border-0 p-3 text-end">Giá</th>
                     <th className="border-0 p-3 text-center">Trạng Thái</th>
                   </tr>
@@ -272,6 +286,11 @@ const StockManagement = () => {
                           className={`badge ${(variant.stock || 0) > 10 ? 'bg-success' : (variant.stock || 0) > 0 ? 'bg-warning' : 'bg-danger'} fs-6`}
                         >
                           {variant.stock || 0}
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">
+                        <span className={`badge ${(variant.reserved || 0) > 0 ? 'bg-info' : 'bg-secondary'} fs-6`}>
+                          {variant.reserved || 0}
                         </span>
                       </td>
                       <td className="p-3 text-end">
@@ -455,12 +474,16 @@ const StockManagement = () => {
               <Form.Control
                 type="number"
                 min="1"
-                max={selectedVariant?.stock || 0}
+                max={availableToExportLimit}
                 value={quantity}
                 onChange={e => setQuantity(parseInt(e.target.value, 10) || 1)}
                 placeholder="Nhập số lượng..."
               />
-              {selectedVariant && <Form.Text className="text-muted">Tồn kho hiện tại: {selectedVariant.stock || 0}</Form.Text>}
+              {selectedVariant && (
+                <Form.Text className="text-muted">
+                  Có thể xuất tối đa: {availableToExportLimit} (từ tổng {selectedVariant.stock || 0})
+                </Form.Text>
+              )}
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -480,7 +503,12 @@ const StockManagement = () => {
             <i className="fa fa-times me-2"></i>
             Hủy
           </Button>
-          <Button variant="danger" onClick={() => void handleStockOut()} disabled={updating} className="px-4">
+          <Button
+            variant="danger"
+            onClick={() => void handleStockOut()}
+            disabled={updating || quantity > availableToExportLimit}
+            className="px-4"
+          >
             {updating ? (
               <>
                 <Spinner size="sm" className="me-2" />

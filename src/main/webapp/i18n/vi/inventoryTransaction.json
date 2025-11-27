@@ -1,0 +1,9 @@
+{
+  "fShopApp": {
+    "inventoryTransaction": {
+      "created": "Giao dịch kho đã được lưu thành công.",
+      "updated": "Giao dịch kho đã được cập nhật thành công.",
+      "deleted": "Giao dịch kho đã bị xóa."
+    }
+  }
+}

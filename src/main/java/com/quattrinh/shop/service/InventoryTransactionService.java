@@ -7,6 +7,7 @@ import com.quattrinh.shop.repository.InventoryTransactionRepository;
 import com.quattrinh.shop.repository.ProductVariantRepository;
 import com.quattrinh.shop.service.dto.InventoryTransactionDTO;
 import com.quattrinh.shop.service.mapper.InventoryTransactionMapper;
+import com.quattrinh.shop.web.rest.errors.BadRequestAlertException;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,9 +61,15 @@ public class InventoryTransactionService {
                 int currentStock = variant.getStock() != null ? variant.getStock() : 0;
                 int quantity = inventoryTransaction.getQuantity() != null ? inventoryTransaction.getQuantity() : 0;
 
+                int reserved = variant.getReserved() != null ? variant.getReserved() : 0;
+                int available = Math.max(0, currentStock - reserved);
+
                 if (inventoryTransaction.getType() == TransactionType.IMPORT) {
                     variant.setStock(currentStock + quantity);
                 } else if (inventoryTransaction.getType() == TransactionType.EXPORT) {
+                    if (quantity > available) {
+                        throw new BadRequestAlertException("Not enough available stock", "inventoryTransaction", "stocknotavailable");
+                    }
                     variant.setStock(Math.max(0, currentStock - quantity));
                 } else if (inventoryTransaction.getType() == TransactionType.RETURN) {
                     variant.setStock(currentStock + quantity);

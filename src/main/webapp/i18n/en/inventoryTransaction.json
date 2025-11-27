@@ -1,0 +1,9 @@
+{
+  "fShopApp": {
+    "inventoryTransaction": {
+      "created": "Inventory transaction recorded successfully.",
+      "updated": "Inventory transaction updated successfully.",
+      "deleted": "Inventory transaction deleted successfully."
+    }
+  }
+}

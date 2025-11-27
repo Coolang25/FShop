@@ -14,6 +14,8 @@ export interface IProductVariant {
   sku?: string;
   price?: number;
   stock?: number;
+  reserved?: number;
+  available?: number;
   imageUrl?: string;
   isActive?: boolean;
   product?: IProduct | null;

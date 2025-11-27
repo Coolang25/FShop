@@ -27,7 +27,7 @@ const StockManagement = () => {
   // Load data from API
   useEffect(() => {
     dispatch(getProductVariants({ page: 0, size: 1000, sort: 'id,desc' }));
-    dispatch(getInventoryTransactions({ page: 0, size: 1000, sort: 'createdAt,desc' }));
+    dispatch(getInventoryTransactions({ page: 0, size: 1000, sort: 'createdDate,desc' }));
   }, [dispatch]);
 
   const getTransactionTypeBadge = (type: string) => {

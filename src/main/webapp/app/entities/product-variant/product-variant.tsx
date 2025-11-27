@@ -124,6 +124,10 @@ export const ProductVariant = () => {
                   <Translate contentKey="fShopApp.productVariant.stock">Stock</Translate>{' '}
                   <FontAwesomeIcon icon={getSortIconByFieldName('stock')} />
                 </th>
+                <th className="hand" onClick={sort('reserved')}>
+                  <Translate contentKey="fShopApp.productVariant.reserved">Reserved</Translate>{' '}
+                  <FontAwesomeIcon icon={getSortIconByFieldName('reserved')} />
+                </th>
                 <th>
                   <Translate contentKey="fShopApp.productVariant.product">Product</Translate> <FontAwesomeIcon icon="sort" />
                 </th>
@@ -141,6 +145,7 @@ export const ProductVariant = () => {
                   <td>{productVariant.sku}</td>
                   <td>{productVariant.price}</td>
                   <td>{productVariant.stock}</td>
+                  <td>{productVariant.reserved ?? 0}</td>
                   <td>
                     {productVariant.product ? <Link to={`/product/${productVariant.product.id}`}>{productVariant.product.name}</Link> : ''}
                   </td>

@@ -80,6 +80,7 @@ interface ProductVariant {
   price?: number;
   costPrice?: number;
   stock?: number;
+  reserved?: number;
   imageUrl?: string;
   isActive?: boolean;
   product?: any;
@@ -780,8 +781,11 @@ const ProductManagement = () => {
                               <span className="text-muted">No attributes</span>
                             )}
                             <div className="mt-1">
-                              <Badge bg="info" text="white" className="small">
+                              <Badge bg="info" text="white" className="small me-1">
                                 Stock: {variant.stock || 0}
+                              </Badge>
+                              <Badge bg="warning" text="dark" className="small">
+                                Reserved: {variant.reserved || 0}
                               </Badge>
                             </div>
                           </div>

@@ -21,6 +21,7 @@
       "sku": "Sku",
       "price": "Price",
       "stock": "Stock",
+      "reserved": "Reserved",
       "product": "Product"
     }
   }

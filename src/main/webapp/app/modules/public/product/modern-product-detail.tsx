@@ -14,6 +14,8 @@ interface ProductVariant {
   sku: string;
   price: number;
   stock: number;
+  reserved?: number;
+  available?: number;
   imageUrl?: string;
   isActive: boolean;
   attributeValues: Array<{
@@ -52,6 +54,10 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
   const [activeTab, setActiveTab] = useState('description');
   const [addingToCart, setAddingToCart] = useState(false);
   const [cartMessage, setCartMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const selectedVariantAvailable = selectedVariant
+    ? (selectedVariant.available ?? Math.max(0, (selectedVariant.stock ?? 0) - (selectedVariant.reserved ?? 0)))
+    : 0;
 
   // Authentication state
   const account = useAppSelector(state => state.authentication.account);
@@ -123,8 +129,8 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
       return;
     }
 
-    // Check stock availability
-    if (selectedVariant.stock < quantity) {
+    // Check available quantity
+    if (selectedVariantAvailable < quantity) {
       setCartMessage({ type: 'error', text: 'Not enough stock available!' });
       setTimeout(() => setCartMessage(null), 3000);
       return;
@@ -406,8 +412,8 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
                   <div className="stock-status mb-4">
                     {selectedVariant ? (
                       <div>
-                        <Badge bg={selectedVariant.stock > 0 ? 'success' : 'danger'} style={{ fontSize: '1rem', padding: '8px 16px' }}>
-                          {selectedVariant.stock > 0 ? `In Stock (${selectedVariant.stock} available)` : 'Out of Stock'}
+                        <Badge bg={selectedVariantAvailable > 0 ? 'success' : 'danger'} style={{ fontSize: '1rem', padding: '8px 16px' }}>
+                          {selectedVariantAvailable > 0 ? `In Stock (${selectedVariantAvailable} available)` : 'Out of Stock'}
                         </Badge>
                         <div className="mt-2">
                           <small className="text-muted">SKU: {selectedVariant.sku}</small>
@@ -433,7 +439,7 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
                         <Button
                           variant="outline-secondary"
                           onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          disabled={!selectedVariant || selectedVariant.stock === 0}
+                          disabled={!selectedVariant || selectedVariantAvailable === 0}
                         >
                           -
                         </Button>
@@ -441,15 +447,17 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
                           type="number"
                           className="form-control text-center"
                           value={quantity}
-                          onChange={e => setQuantity(Math.max(1, Math.min(selectedVariant?.stock || 1, parseInt(e.target.value, 10) || 1)))}
+                          onChange={e =>
+                            setQuantity(Math.max(1, Math.min(selectedVariantAvailable || 1, parseInt(e.target.value, 10) || 1)))
+                          }
                           min="1"
-                          max={selectedVariant?.stock || 1}
-                          disabled={!selectedVariant || selectedVariant.stock === 0}
+                          max={selectedVariantAvailable || 1}
+                          disabled={!selectedVariant || selectedVariantAvailable === 0}
                         />
                         <Button
                           variant="outline-secondary"
-                          onClick={() => setQuantity(Math.min(selectedVariant?.stock || 1, quantity + 1))}
-                          disabled={!selectedVariant || selectedVariant.stock === 0}
+                          onClick={() => setQuantity(Math.min(selectedVariantAvailable || 1, quantity + 1))}
+                          disabled={!selectedVariant || selectedVariantAvailable === 0}
                         >
                           +
                         </Button>
@@ -465,7 +473,7 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
                         onClick={() => {
                           handleAddToCart();
                         }}
-                        disabled={!selectedVariant || selectedVariant.stock === 0 || addingToCart}
+                        disabled={!selectedVariant || selectedVariantAvailable === 0 || addingToCart}
                         style={{
                           borderRadius: '25px',
                           padding: '12px',
@@ -473,7 +481,7 @@ const ModernProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
                           textTransform: 'uppercase',
                           letterSpacing: '0.5px',
                           background:
-                            !selectedVariant || selectedVariant.stock === 0 || addingToCart
+                            !selectedVariant || selectedVariantAvailable === 0 || addingToCart
                               ? 'linear-gradient(135deg, #6c757d 0%, #495057 100%)'
                               : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                           border: 'none',

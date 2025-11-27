@@ -82,6 +82,16 @@ export const partialUpdateEntity = createAsyncThunk(
   { serializeError: serializeAxiosError },
 );
 
+export const updateStatus = createAsyncThunk(
+  'shopOrder/update_status',
+  async ({ id, status }: { id: number | string; status: string }, thunkAPI) => {
+    const result = await axios.patch<IShopOrder>(`${apiUrl}/${id}/status`, cleanEntity({ status }));
+    thunkAPI.dispatch(getEntities({}));
+    return result;
+  },
+  { serializeError: serializeAxiosError },
+);
+
 export const deleteEntity = createAsyncThunk(
   'shopOrder/delete_entity',
   async (id: string | number, thunkAPI) => {
@@ -119,7 +129,7 @@ export const ShopOrderSlice = createEntitySlice({
           totalItems: parseInt(headers['x-total-count'], 10) || data.length,
         };
       })
-      .addMatcher(isFulfilled(createEntity, updateEntity, partialUpdateEntity), (state, action) => {
+      .addMatcher(isFulfilled(createEntity, updateEntity, partialUpdateEntity, updateStatus), (state, action) => {
         state.updating = false;
         state.loading = false;
         state.updateSuccess = true;
@@ -130,7 +140,7 @@ export const ShopOrderSlice = createEntitySlice({
         state.updateSuccess = false;
         state.loading = true;
       })
-      .addMatcher(isPending(createEntity, updateEntity, partialUpdateEntity, deleteEntity), state => {
+      .addMatcher(isPending(createEntity, updateEntity, partialUpdateEntity, deleteEntity, updateStatus), state => {
         state.errorMessage = null;
         state.updateSuccess = false;
         state.updating = true;

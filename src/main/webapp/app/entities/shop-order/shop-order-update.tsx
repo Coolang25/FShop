@@ -9,7 +9,7 @@ import { useAppDispatch, useAppSelector } from 'app/config/store';
 
 import { getUsers } from 'app/modules/admin/monitoring/user-management/user-management.reducer';
 import { OrderStatus } from 'app/shared/model/enumerations/order-status.model';
-import { createEntity, getEntity, reset, updateEntity } from './shop-order.reducer';
+import { createEntity, getEntity, reset, updateStatus } from './shop-order.reducer';
 
 export const ShopOrderUpdate = () => {
   const dispatch = useAppDispatch();
@@ -47,6 +47,12 @@ export const ShopOrderUpdate = () => {
   }, [updateSuccess]);
 
   const saveEntity = values => {
+    if (!isNew) {
+      const orderId = typeof values.id === 'number' ? values.id : Number(values.id);
+      dispatch(updateStatus({ id: orderId, status: values.status }));
+      return;
+    }
+
     if (values.id !== undefined && typeof values.id !== 'number') {
       values.id = Number(values.id);
     }
@@ -64,8 +70,6 @@ export const ShopOrderUpdate = () => {
 
     if (isNew) {
       dispatch(createEntity(entity));
-    } else {
-      dispatch(updateEntity(entity));
     }
   };
 
@@ -99,76 +103,100 @@ export const ShopOrderUpdate = () => {
           ) : (
             <ValidatedForm defaultValues={defaultValues()} onSubmit={saveEntity}>
               {!isNew ? (
-                <ValidatedField
-                  name="id"
-                  required
-                  readOnly
-                  id="shop-order-id"
-                  label={translate('global.field.id')}
-                  validate={{ required: true }}
-                />
-              ) : null}
-              <ValidatedField
-                label={translate('fShopApp.shopOrder.status')}
-                id="shop-order-status"
-                name="status"
-                data-cy="status"
-                type="select"
-              >
-                {orderStatusValues.map(orderStatus => (
-                  <option value={orderStatus} key={orderStatus}>
-                    {translate(`fShopApp.OrderStatus.${orderStatus}`)}
-                  </option>
-                ))}
-              </ValidatedField>
-              <ValidatedField
-                label={translate('fShopApp.shopOrder.total')}
-                id="shop-order-total"
-                name="total"
-                data-cy="total"
-                type="text"
-                validate={{
-                  required: { value: true, message: translate('entity.validation.required') },
-                  validate: v => isNumber(v) || translate('entity.validation.number'),
-                }}
-              />
-              <ValidatedField
-                label={translate('fShopApp.shopOrder.shippingAddress')}
-                id="shop-order-shippingAddress"
-                name="shippingAddress"
-                data-cy="shippingAddress"
-                type="text"
-                validate={{
-                  required: { value: true, message: translate('entity.validation.required') },
-                  maxLength: { value: 1000, message: translate('entity.validation.maxlength', { max: 1000 }) },
-                }}
-              />
-              <ValidatedField
-                label={translate('fShopApp.shopOrder.createdAt')}
-                id="shop-order-createdAt"
-                name="createdAt"
-                data-cy="createdAt"
-                type="datetime-local"
-                placeholder="YYYY-MM-DD HH:mm"
-              />
-              <ValidatedField
-                label={translate('fShopApp.shopOrder.updatedAt')}
-                id="shop-order-updatedAt"
-                name="updatedAt"
-                data-cy="updatedAt"
-                type="datetime-local"
-                placeholder="YYYY-MM-DD HH:mm"
-              />
-              <ValidatedField id="shop-order-user" name="user" data-cy="user" label={translate('fShopApp.shopOrder.user')} type="select">
-                <option value="" key="0" />
-                {users
-                  ? users.map(otherEntity => (
-                      <option value={otherEntity.id} key={otherEntity.id}>
-                        {otherEntity.login}
+                <>
+                  <ValidatedField
+                    name="id"
+                    required
+                    readOnly
+                    id="shop-order-id"
+                    label={translate('global.field.id')}
+                    validate={{ required: true }}
+                  />
+                  <ValidatedField
+                    label={translate('fShopApp.shopOrder.status')}
+                    id="shop-order-status"
+                    name="status"
+                    data-cy="status"
+                    type="select"
+                  >
+                    {orderStatusValues.map(orderStatus => (
+                      <option value={orderStatus} key={orderStatus}>
+                        {translate(`fShopApp.OrderStatus.${orderStatus}`)}
                       </option>
-                    ))
-                  : null}
-              </ValidatedField>
+                    ))}
+                  </ValidatedField>
+                </>
+              ) : (
+                <>
+                  <ValidatedField
+                    label={translate('fShopApp.shopOrder.status')}
+                    id="shop-order-status"
+                    name="status"
+                    data-cy="status"
+                    type="select"
+                  >
+                    {orderStatusValues.map(orderStatus => (
+                      <option value={orderStatus} key={orderStatus}>
+                        {translate(`fShopApp.OrderStatus.${orderStatus}`)}
+                      </option>
+                    ))}
+                  </ValidatedField>
+                  <ValidatedField
+                    label={translate('fShopApp.shopOrder.total')}
+                    id="shop-order-total"
+                    name="total"
+                    data-cy="total"
+                    type="text"
+                    validate={{
+                      required: { value: true, message: translate('entity.validation.required') },
+                      validate: v => isNumber(v) || translate('entity.validation.number'),
+                    }}
+                  />
+                  <ValidatedField
+                    label={translate('fShopApp.shopOrder.shippingAddress')}
+                    id="shop-order-shippingAddress"
+                    name="shippingAddress"
+                    data-cy="shippingAddress"
+                    type="text"
+                    validate={{
+                      required: { value: true, message: translate('entity.validation.required') },
+                      maxLength: { value: 1000, message: translate('entity.validation.maxlength', { max: 1000 }) },
+                    }}
+                  />
+                  <ValidatedField
+                    label={translate('fShopApp.shopOrder.createdAt')}
+                    id="shop-order-createdAt"
+                    name="createdAt"
+                    data-cy="createdAt"
+                    type="datetime-local"
+                    placeholder="YYYY-MM-DD HH:mm"
+                  />
+                  <ValidatedField
+                    label={translate('fShopApp.shopOrder.updatedAt')}
+                    id="shop-order-updatedAt"
+                    name="updatedAt"
+                    data-cy="updatedAt"
+                    type="datetime-local"
+                    placeholder="YYYY-MM-DD HH:mm"
+                  />
+                  <ValidatedField
+                    id="shop-order-user"
+                    name="user"
+                    data-cy="user"
+                    label={translate('fShopApp.shopOrder.user')}
+                    type="select"
+                  >
+                    <option value="" key="0" />
+                    {users
+                      ? users.map(otherEntity => (
+                          <option value={otherEntity.id} key={otherEntity.id}>
+                            {otherEntity.login}
+                          </option>
+                        ))
+                      : null}
+                  </ValidatedField>
+                </>
+              )}
               <Button tag={Link} id="cancel-save" data-cy="entityCreateCancelButton" to="/shop-order" replace color="info">
                 <FontAwesomeIcon icon="arrow-left" />
                 &nbsp;

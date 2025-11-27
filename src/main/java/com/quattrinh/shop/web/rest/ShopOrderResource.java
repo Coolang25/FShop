@@ -1,5 +1,6 @@
 package com.quattrinh.shop.web.rest;
 
+import com.quattrinh.shop.domain.enumeration.OrderStatus;
 import com.quattrinh.shop.repository.ShopOrderRepository;
 import com.quattrinh.shop.service.ShopOrderService;
 import com.quattrinh.shop.service.dto.ShopOrderDTO;
@@ -198,6 +199,22 @@ public class ShopOrderResource {
     }
 
     /**
+     * {@code PATCH  /shop-orders/:id/status} : update only status of the order.
+     *
+     * @param id the id of the order to update.
+     * @param statusRequest the status update request.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated shopOrderDTO.
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ShopOrderDTO> updateOrderStatus(@PathVariable Long id, @NotNull @RequestBody StatusUpdateRequest statusRequest) {
+        log.debug("REST request to update ShopOrder status: {}, {}", id, statusRequest);
+        ShopOrderDTO result = shopOrderService.updateStatus(id, statusRequest.getStatus());
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .body(result);
+    }
+
+    /**
      * {@code GET  /shop-orders/user/{userId} : get all orders for a specific user.
      *
      * @param userId the user ID to get orders for.
@@ -287,6 +304,19 @@ public class ShopOrderResource {
 
         public void setSelectedItemIds(java.util.List<Long> selectedItemIds) {
             this.selectedItemIds = selectedItemIds;
+        }
+    }
+
+    public static class StatusUpdateRequest {
+
+        private OrderStatus status;
+
+        public OrderStatus getStatus() {
+            return status;
+        }
+
+        public void setStatus(OrderStatus status) {
+            this.status = status;
         }
     }
 }

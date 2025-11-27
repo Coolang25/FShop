@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Spinner, Alert, Table, Dropdown, Modal, Form } from 'react-bootstrap';
 import { useAppDispatch, useAppSelector } from 'app/config/store';
-import { getEntities, updateEntity } from 'app/entities/shop-order/shop-order.reducer';
+import { getEntities, updateStatus } from 'app/entities/shop-order/shop-order.reducer';
 import { IShopOrder } from 'app/shared/model/shop-order.model';
 import { OrderStatus } from 'app/shared/model/enumerations/order-status.model';
 
@@ -84,12 +84,7 @@ const AdminOrders: React.FC = () => {
 
   const handleUpdateStatus = async () => {
     if (selectedOrder && newStatus) {
-      const updatedOrder = {
-        ...selectedOrder,
-        status: newStatus as keyof typeof OrderStatus,
-      };
-
-      await dispatch(updateEntity(updatedOrder));
+      await dispatch(updateStatus({ id: selectedOrder.id, status: newStatus }));
       setShowStatusModal(false);
       setSelectedOrder(null);
       setNewStatus('');

@@ -27,6 +27,8 @@ public class ProductVariantDTO implements Serializable {
 
     private Integer stock = 0;
 
+    private Integer reserved = 0;
+
     private String imageUrl;
 
     private Boolean isActive = true;
@@ -73,6 +75,14 @@ public class ProductVariantDTO implements Serializable {
 
     public void setStock(Integer stock) {
         this.stock = stock;
+    }
+
+    public Integer getReserved() {
+        return reserved;
+    }
+
+    public void setReserved(Integer reserved) {
+        this.reserved = reserved;
     }
 
     public String getImageUrl() {
@@ -137,6 +147,7 @@ public class ProductVariantDTO implements Serializable {
             ", price=" + getPrice() +
             ", costPrice=" + getCostPrice() +
             ", stock=" + getStock() +
+            ", reserved=" + getReserved() +
             ", imageUrl='" + getImageUrl() + "'" +
             ", isActive=" + getIsActive() +
             ", product=" + getProduct() +

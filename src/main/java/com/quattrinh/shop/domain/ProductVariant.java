@@ -3,7 +3,6 @@ package com.quattrinh.shop.domain;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
@@ -43,6 +42,11 @@ public class ProductVariant extends AbstractAuditingEntity<Long> {
     @Min(value = 0)
     @Column(name = "stock", nullable = false, columnDefinition = "integer default 0")
     private Integer stock = 0;
+
+    @NotNull
+    @Min(value = 0)
+    @Column(name = "reserved", nullable = false, columnDefinition = "integer default 0")
+    private Integer reserved = 0;
 
     @Column(name = "image_url")
     private String imageUrl;
@@ -129,6 +133,19 @@ public class ProductVariant extends AbstractAuditingEntity<Long> {
 
     public void setStock(Integer stock) {
         this.stock = stock;
+    }
+
+    public Integer getReserved() {
+        return this.reserved;
+    }
+
+    public ProductVariant reserved(Integer reserved) {
+        this.setReserved(reserved);
+        return this;
+    }
+
+    public void setReserved(Integer reserved) {
+        this.reserved = reserved;
     }
 
     public String getImageUrl() {
@@ -221,6 +238,7 @@ public class ProductVariant extends AbstractAuditingEntity<Long> {
             ", price=" + getPrice() +
             ", costPrice=" + getCostPrice() +
             ", stock=" + getStock() +
+            ", reserved=" + getReserved() +
             ", imageUrl='" + getImageUrl() + "'" +
             ", isActive=" + getIsActive() +
             "}";

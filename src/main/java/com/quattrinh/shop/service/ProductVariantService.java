@@ -120,6 +120,7 @@ public class ProductVariantService {
         existingVariant.setPrice(productVariantDTO.getPrice());
         existingVariant.setCostPrice(productVariantDTO.getCostPrice());
         existingVariant.setStock(productVariantDTO.getStock());
+        existingVariant.setReserved(productVariantDTO.getReserved());
         existingVariant.setImageUrl(productVariantDTO.getImageUrl());
         existingVariant.setIsActive(productVariantDTO.getIsActive());
 
@@ -191,6 +192,9 @@ public class ProductVariantService {
                 }
                 if (productVariantDTO.getStock() != null) {
                     existingProductVariant.setStock(productVariantDTO.getStock());
+                }
+                if (productVariantDTO.getReserved() != null) {
+                    existingProductVariant.setReserved(productVariantDTO.getReserved());
                 }
                 if (productVariantDTO.getImageUrl() != null) {
                     existingProductVariant.setImageUrl(productVariantDTO.getImageUrl());

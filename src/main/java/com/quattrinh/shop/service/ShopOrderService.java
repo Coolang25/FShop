@@ -3,11 +3,13 @@ package com.quattrinh.shop.service;
 import com.quattrinh.shop.domain.Cart;
 import com.quattrinh.shop.domain.CartItem;
 import com.quattrinh.shop.domain.OrderItem;
+import com.quattrinh.shop.domain.ProductVariant;
 import com.quattrinh.shop.domain.ShopOrder;
 import com.quattrinh.shop.domain.User;
 import com.quattrinh.shop.domain.enumeration.OrderStatus;
 import com.quattrinh.shop.repository.CartItemRepository;
 import com.quattrinh.shop.repository.CartRepository;
+import com.quattrinh.shop.repository.ProductVariantRepository;
 import com.quattrinh.shop.repository.ShopOrderRepository;
 import com.quattrinh.shop.repository.UserRepository;
 import com.quattrinh.shop.service.dto.OrderItemDTO;
@@ -43,6 +45,7 @@ public class ShopOrderService {
     private final PaymentService paymentService;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    private final ProductVariantRepository productVariantRepository;
 
     public ShopOrderService(
         ShopOrderRepository shopOrderRepository,
@@ -51,7 +54,8 @@ public class ShopOrderService {
         OrderItemMapper orderItemMapper,
         PaymentService paymentService,
         CartRepository cartRepository,
-        CartItemRepository cartItemRepository
+        CartItemRepository cartItemRepository,
+        ProductVariantRepository productVariantRepository
     ) {
         this.shopOrderRepository = shopOrderRepository;
         this.userRepository = userRepository;
@@ -60,6 +64,7 @@ public class ShopOrderService {
         this.paymentService = paymentService;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
+        this.productVariantRepository = productVariantRepository;
     }
 
     /**
@@ -83,8 +88,13 @@ public class ShopOrderService {
      */
     public ShopOrderDTO update(ShopOrderDTO shopOrderDTO) {
         log.debug("Request to update ShopOrder : {}", shopOrderDTO);
+        OrderStatus previousStatus = null;
+        if (shopOrderDTO.getId() != null) {
+            previousStatus = shopOrderRepository.findById(shopOrderDTO.getId()).map(ShopOrder::getStatus).orElse(null);
+        }
         ShopOrder shopOrder = shopOrderMapper.toEntity(shopOrderDTO);
         shopOrder = shopOrderRepository.save(shopOrder);
+        handleOrderCompletionTransition(previousStatus, shopOrder);
         return shopOrderMapper.toDto(shopOrder);
     }
 
@@ -100,12 +110,22 @@ public class ShopOrderService {
         return shopOrderRepository
             .findById(shopOrderDTO.getId())
             .map(existingShopOrder -> {
+                OrderStatus previousStatus = existingShopOrder.getStatus();
                 shopOrderMapper.partialUpdate(existingShopOrder, shopOrderDTO);
+                ShopOrder saved = shopOrderRepository.save(existingShopOrder);
+                handleOrderCompletionTransition(previousStatus, saved);
+                return shopOrderMapper.toDto(saved);
+            });
+    }
 
-                return existingShopOrder;
-            })
-            .map(shopOrderRepository::save)
-            .map(shopOrderMapper::toDto);
+    public ShopOrderDTO updateStatus(Long id, OrderStatus status) {
+        ShopOrder order = shopOrderRepository.findById(id).orElseThrow(() -> new RuntimeException("Order not found"));
+        OrderStatus previousStatus = order.getStatus();
+        order.setStatus(status);
+        order.setUpdatedAt(Instant.now());
+        ShopOrder saved = shopOrderRepository.save(order);
+        handleOrderCompletionTransition(previousStatus, saved);
+        return shopOrderMapper.toDto(saved);
     }
 
     /**
@@ -243,6 +263,7 @@ public class ShopOrderService {
      * @param checkoutRequest the checkout request.
      * @return the created order.
      */
+    @Transactional
     public ShopOrderDTO createOrderFromCheckout(com.quattrinh.shop.web.rest.ShopOrderResource.CheckoutRequest checkoutRequest) {
         log.debug("Request to create order from checkout: {}", checkoutRequest);
 
@@ -282,9 +303,20 @@ public class ShopOrderService {
 
             // Create order items from selected cart items only
             for (CartItem cartItem : selectedCartItems) {
+                ProductVariant variant = productVariantRepository
+                    .findById(cartItem.getVariant().getId())
+                    .orElseThrow(() -> new RuntimeException("Product variant not found"));
+
+                int available = getAvailableQuantity(variant);
+                if (available < cartItem.getQuantity()) {
+                    throw new RuntimeException("Not enough available stock for variant: " + variant.getId());
+                }
+
+                reserveVariant(variant, cartItem.getQuantity());
+
                 OrderItem orderItem = new OrderItem();
                 orderItem.setOrder(savedOrder);
-                orderItem.setVariant(cartItem.getVariant());
+                orderItem.setVariant(variant);
                 orderItem.setQuantity(cartItem.getQuantity());
                 orderItem.setPrice(cartItem.getPrice());
 
@@ -310,6 +342,60 @@ public class ShopOrderService {
         log.debug("Created payment with ID: {} for order: {}", payment.getId(), savedOrder.getId());
 
         return shopOrderMapper.toDto(savedOrder);
+    }
+
+    private int getAvailableQuantity(ProductVariant variant) {
+        if (variant == null) {
+            return 0;
+        }
+        int stock = variant.getStock() != null ? variant.getStock() : 0;
+        int reserved = variant.getReserved() != null ? variant.getReserved() : 0;
+        return Math.max(0, stock - reserved);
+    }
+
+    private void reserveVariant(ProductVariant variant, int quantity) {
+        if (variant == null || quantity <= 0) {
+            return;
+        }
+        int reserved = variant.getReserved() != null ? variant.getReserved() : 0;
+        variant.setReserved(reserved + quantity);
+        productVariantRepository.save(variant);
+    }
+
+    private void handleOrderCompletionTransition(OrderStatus previousStatus, ShopOrder updatedOrder) {
+        if (updatedOrder == null) {
+            return;
+        }
+        OrderStatus newStatus = updatedOrder.getStatus();
+        if (newStatus == OrderStatus.COMPLETED && previousStatus != OrderStatus.COMPLETED) {
+            ShopOrder orderWithItems = shopOrderRepository.findOneWithEagerRelationships(updatedOrder.getId()).orElse(updatedOrder);
+            finalizeOrderItemsStock(orderWithItems);
+        }
+    }
+
+    private void finalizeOrderItemsStock(ShopOrder order) {
+        if (order == null || order.getOrderItems() == null) {
+            return;
+        }
+
+        for (OrderItem orderItem : order.getOrderItems()) {
+            ProductVariant variant = orderItem.getVariant();
+            if (variant == null) {
+                continue;
+            }
+
+            ProductVariant managedVariant = productVariantRepository
+                .findById(variant.getId())
+                .orElseThrow(() -> new RuntimeException("Product variant not found during finalization"));
+
+            int stock = managedVariant.getStock() != null ? managedVariant.getStock() : 0;
+            int reserved = managedVariant.getReserved() != null ? managedVariant.getReserved() : 0;
+            int quantity = orderItem.getQuantity() != null ? orderItem.getQuantity() : 0;
+
+            managedVariant.setStock(Math.max(0, stock - quantity));
+            managedVariant.setReserved(Math.max(0, reserved - quantity));
+            productVariantRepository.save(managedVariant);
+        }
     }
 
     /**

@@ -269,7 +269,11 @@ public class ProductService {
             variantData.put("id", variant.getId());
             variantData.put("sku", variant.getSku());
             variantData.put("price", variant.getPrice());
-            variantData.put("stock", variant.getStock());
+            int stock = variant.getStock() != null ? variant.getStock() : 0;
+            int reserved = variant.getReserved() != null ? variant.getReserved() : 0;
+            variantData.put("stock", stock);
+            variantData.put("reserved", reserved);
+            variantData.put("available", Math.max(0, stock - reserved));
             variantData.put("imageUrl", variant.getImageUrl());
             variantData.put("isActive", variant.getIsActive());
 

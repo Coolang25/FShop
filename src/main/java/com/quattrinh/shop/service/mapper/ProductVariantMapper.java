@@ -29,6 +29,7 @@ public class ProductVariantMapper {
         dto.setPrice(entity.getPrice());
         dto.setCostPrice(entity.getCostPrice());
         dto.setStock(entity.getStock());
+        dto.setReserved(entity.getReserved());
         dto.setImageUrl(entity.getImageUrl());
         dto.setIsActive(entity.getIsActive());
 
@@ -61,6 +62,7 @@ public class ProductVariantMapper {
         dto.setPrice(entity.getPrice());
         dto.setCostPrice(entity.getCostPrice());
         dto.setStock(entity.getStock());
+        dto.setReserved(entity.getReserved());
         dto.setImageUrl(entity.getImageUrl());
         dto.setIsActive(entity.getIsActive());
 
@@ -93,6 +95,7 @@ public class ProductVariantMapper {
         entity.setPrice(dto.getPrice());
         entity.setCostPrice(dto.getCostPrice());
         entity.setStock(dto.getStock());
+        entity.setReserved(dto.getReserved());
         entity.setImageUrl(dto.getImageUrl());
         entity.setIsActive(dto.getIsActive());
 

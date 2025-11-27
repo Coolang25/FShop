@@ -239,6 +239,7 @@ public class CartService {
                             variantDTO.setSku(item.getVariant().getSku());
                             variantDTO.setPrice(item.getVariant().getPrice());
                             variantDTO.setStock(item.getVariant().getStock());
+                            variantDTO.setReserved(item.getVariant().getReserved());
                             variantDTO.setImageUrl(item.getVariant().getImageUrl());
                             variantDTO.setIsActive(item.getVariant().getIsActive());
 
